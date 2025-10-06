@@ -3,7 +3,7 @@ import { BlobServiceClient } from '@azure/storage-blob'
 import { v4 as uuidv4 } from 'uuid'
 
 // Azure Storage configuration
-const AZURE_STORAGE_CONNECTION_STRING = process.env.AZURE_STORAGE_CONNECTION_STRING
+const AZURE_STORAGE_CONNECTION_STRING = process.env.azure_storage_connection_string
 const CONTAINER_NAME = 'cv-files'
 
 // Initialize Azure Blob Service Client
