@@ -7,9 +7,11 @@ on:
     branches: [ main ]
 
 env:
-  AZURE_WEBAPP_NAME: cvtool-ui  # Replace with your Azure app name
-  AZURE_RESOURCE_GROUP:  az-rg-rmdy-cv-agent # Replace with your resource group
-  CONTAINER_REGISTRY: crRmdyCvAgent  # Replace with your ACR name
+  AZURE_WEBAPP_NAME: cvtool-ui
+  AZURE_RESOURCE_GROUP: az-rg-rmdy-cv-agent
+  CONTAINER_REGISTRY: crRmdyCvAgent
+  CONTAINER_APP_ENVIRONMENT: cvtool-env
+  CONTAINER_APP_NAME: cvtool-app
 
 jobs:
   build-and-deploy:
@@ -51,27 +53,41 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Register Container Instance provider
-      run: |
-        az provider register --namespace Microsoft.ContainerInstance
-        az provider show --namespace Microsoft.ContainerInstance --query "registrationState"
-
-    - name: Deploy to Azure Container Instances
+    - name: Create Container Apps Environment (if not exists)
       if: github.ref == 'refs/heads/main'
       run: |
-        # Create container instance
-        az container create \
+        az containerapp env create \
+          --name ${{ env.CONTAINER_APP_ENVIRONMENT }} \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --name ${{ env.AZURE_WEBAPP_NAME }}-${{ github.run_number }} \
+          --location 'France Central' \
+          --only-show-errors || echo "Environment already exists"
+
+    - name: Deploy to Azure Container Apps
+      if: github.ref == 'refs/heads/main'
+      run: |
+        az containerapp create \
+          --name ${{ env.CONTAINER_APP_NAME }} \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --environment ${{ env.CONTAINER_APP_ENVIRONMENT }} \
           --image ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} \
-          --registry-login-server ${{ env.CONTAINER_REGISTRY }}.azurecr.io \
+          --target-port 3000 \
+          --ingress external \
+          --registry-server ${{ env.CONTAINER_REGISTRY }}.azurecr.io \
           --registry-username ${{ secrets.ACR_USERNAME }} \
           --registry-password ${{ secrets.ACR_PASSWORD }} \
-          --dns-name-label ${{ env.AZURE_WEBAPP_NAME }}-${{ github.run_number }} \
-          --ports 3000 \
-          --cpu 1 \
-          --memory 1 \
-          --location 'France Central' \
-          --restart-policy Always
+          --cpu 0.25 \
+          --memory 0.5Gi \
+          --min-replicas 0 \
+          --max-replicas 1 \
+          --only-show-errors || \
+        az containerapp update \
+          --name ${{ env.CONTAINER_APP_NAME }} \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --image ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} \
+          --cpu 0.25 \
+          --memory 0.5Gi \
+          --min-replicas 0 \
+          --max-replicas 1 \
+          --only-show-errors
 
           
