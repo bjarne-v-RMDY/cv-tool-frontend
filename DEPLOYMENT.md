@@ -1,4 +1,4 @@
-# Azure Deployment Setup Guide
+# Azure Container Apps Deployment Setup Guide
 
 ## Prerequisites
 - Azure subscription
@@ -9,17 +9,17 @@
 
 ### 1.1 Create Resource Group
 ```bash
-az group create --name cvtool-rg --location "East US"
+az group create --name az-rg-rmdy-cv-agent --location "France Central"
 ```
 
 ### 1.2 Create Azure Container Registry (ACR)
 ```bash
-az acr create --resource-group cvtool-rg --name cvtoolregistry --sku Basic --admin-enabled true
+az acr create --resource-group az-rg-rmdy-cv-agent --name crRmdyCvAgent --sku Basic --admin-enabled true
 ```
 
 ### 1.3 Get ACR Credentials
 ```bash
-az acr credential show --name cvtoolregistry --resource-group cvtool-rg
+az acr credential show --name crRmdyCvAgent --resource-group az-rg-rmdy-cv-agent
 ```
 Save the username and password - you'll need these for GitHub secrets.
 
@@ -27,7 +27,7 @@ Save the username and password - you'll need these for GitHub secrets.
 
 ### 2.1 Create Service Principal
 ```bash
-az ad sp create-for-rbac --name "cvtool-github-actions" --role contributor --scopes /subscriptions/{subscription-id}/resourceGroups/cvtool-rg --sdk-auth
+az ad sp create-for-rbac --name "cvtool-github-actions" --role contributor --scopes /subscriptions/{subscription-id}/resourceGroups/az-rg-rmdy-cv-agent --sdk-auth
 ```
 
 ### 2.2 Save the JSON output
@@ -46,11 +46,13 @@ Add these secrets:
 ## Step 4: Update Configuration Files
 
 ### 4.1 Update GitHub Actions workflow
-Edit `.github/workflows/deploy.yml` and update these variables:
-- `AZURE_WEBAPP_NAME`: Your preferred app name
-- `AZURE_RESOURCE_GROUP`: Your resource group name
-- `CONTAINER_REGISTRY`: Your ACR name
-- `location`: Your preferred Azure region
+The workflow is already configured for Container Apps with these settings:
+- `AZURE_WEBAPP_NAME`: cvtool-ui
+- `AZURE_RESOURCE_GROUP`: az-rg-rmdy-cv-agent
+- `CONTAINER_REGISTRY`: crRmdyCvAgent
+- `CONTAINER_APP_ENVIRONMENT`: cvtool-env
+- `CONTAINER_APP_NAME`: cvtool-app
+- `location`: France Central
 
 ### 4.2 Test the deployment
 Push to main branch to trigger the deployment.
@@ -58,47 +60,32 @@ Push to main branch to trigger the deployment.
 ## Step 5: Access Your Application
 
 After deployment, your app will be available at:
-`https://{dns-name-label}.{region}.azurecontainer.io`
+`https://{container-app-name}.{random-string}.{region}.azurecontainerapps.io`
 
-The DNS name is generated as: `{AZURE_WEBAPP_NAME}-{github-run-number}`
+The URL format for Container Apps is different from Container Instances. You can find the exact URL in:
+- Azure Portal → Container Apps → cvtool-app → Application URL
+- Or check the GitHub Actions logs for the deployment URL
 
-## Alternative: Azure Container Apps (Recommended)
+## Step 6: Container Apps Benefits
 
-For a more modern approach, consider using Azure Container Apps instead of Container Instances:
-
-### Benefits:
-- Better scaling capabilities
-- Built-in load balancing
-- Easier SSL/TLS management
-- Better integration with Azure services
-
-### Setup Container Apps:
-```bash
-# Create Container Apps environment
-az containerapp env create --name cvtool-env --resource-group cvtool-rg --location "East US"
-
-# Create Container App
-az containerapp create \
-  --name cvtool-app \
-  --resource-group cvtool-rg \
-  --environment cvtool-env \
-  --image cvtoolregistry.azurecr.io/cvtool-app:latest \
-  --target-port 3000 \
-  --ingress external \
-  --registry-server cvtoolregistry.azurecr.io \
-  --registry-username {ACR_USERNAME} \
-  --registry-password {ACR_PASSWORD}
-```
+### What Container Apps provides:
+- **Cost-optimized**: Minimal resources (0.25 CPU, 0.5GB RAM) for personal use
+- **Scale-to-zero**: Scales down to 0 replicas when not in use (saves money!)
+- **Single replica**: Maximum 1 replica for personal use
+- **Built-in load balancing**: No need to configure load balancers
+- **Easy SSL/TLS**: Automatic HTTPS with custom domains
+- **Environment management**: Isolated environments for different stages
+- **No provider registration**: No need to register Microsoft.ContainerInstance
 
 ## Monitoring and Logs
 
 ### View logs:
 ```bash
-az containerapp logs show --name cvtool-app --resource-group cvtool-rg --follow
+az containerapp logs show --name cvtool-app --resource-group az-rg-rmdy-cv-agent --follow
 ```
 
 ### Monitor metrics:
-- Go to Azure Portal → Container Apps → Your App → Monitoring
+- Go to Azure Portal → Container Apps → cvtool-app → Monitoring
 
 ## Troubleshooting
 
@@ -111,18 +98,33 @@ az containerapp logs show --name cvtool-app --resource-group cvtool-rg --follow
 ### Debug commands:
 ```bash
 # Check resource group
-az group show --name cvtool-rg
+az group show --name az-rg-rmdy-cv-agent
 
 # List container registries
-az acr list --resource-group cvtool-rg
+az acr list --resource-group az-rg-rmdy-cv-agent
 
 # Check service principal
 az ad sp list --display-name "cvtool-github-actions"
+
+# List container apps
+az containerapp list --resource-group az-rg-rmdy-cv-agent
 ```
 
 ## Cost Optimization
 
-- Use Basic ACR SKU for development
-- Consider Azure Container Apps for better resource management
-- Set up auto-scaling rules
-- Monitor usage in Azure Cost Management
+### Current Configuration (Minimal Cost):
+- **CPU**: 0.25 cores (minimum for Container Apps)
+- **Memory**: 0.5GB (sufficient for Next.js app)
+- **Replicas**: 0-1 (scales to zero when not used)
+- **ACR**: Basic SKU (cheapest option)
+
+### Cost Breakdown (Estimated):
+- **Container Apps Environment**: ~$0.000012 per vCPU-second
+- **Container App**: ~$0.000012 per vCPU-second + ~$0.0000015 per GB-second
+- **ACR Basic**: ~$5/month (includes 10GB storage)
+- **Total**: ~$5-10/month for personal use (mostly ACR cost)
+
+### Additional Cost Savings:
+- App scales to 0 replicas when idle (no compute cost)
+- Only pay for actual usage time
+- Basic ACR SKU is sufficient for personal projects
