@@ -25,10 +25,16 @@ Save the username and password - you'll need these for GitHub secrets.
 
 ## Step 2: Create Service Principal for GitHub Actions
 
-### 2.1 Create Service Principal
+### 2.1 Create Service Principal with proper permissions
 ```bash
+# Create service principal with Contributor role
 az ad sp create-for-rbac --name "cvtool-github-actions" --role contributor --scopes /subscriptions/{subscription-id}/resourceGroups/az-rg-rmdy-cv-agent --sdk-auth
+
+# Also grant additional permissions for Container Apps
+az role assignment create --assignee {service-principal-object-id} --role "Container Apps Contributor" --scope /subscriptions/{subscription-id}
 ```
+
+**Note**: Replace `{subscription-id}` with your actual Azure subscription ID and `{service-principal-object-id}` with the object ID from the first command.
 
 ### 2.2 Save the JSON output
 This will be your `AZURE_CREDENTIALS` secret.
@@ -94,6 +100,8 @@ az containerapp logs show --name cvtool-app --resource-group az-rg-rmdy-cv-agent
 2. **Registry login issues**: Verify ACR credentials
 3. **Deployment failures**: Check Azure credentials and permissions
 4. **App not accessible**: Verify ingress configuration and port settings
+5. **Provider registration errors**: The workflow now automatically registers Microsoft.App provider
+6. **Permission errors**: Ensure service principal has "Container Apps Contributor" role
 
 ### Debug commands:
 ```bash

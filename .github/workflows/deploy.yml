@@ -53,6 +53,11 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    - name: Register Container Apps provider
+      run: |
+        az provider register --namespace Microsoft.App --wait
+        az provider show --namespace Microsoft.App --query "registrationState"
+
     - name: Create Container Apps Environment (if not exists)
       if: github.ref == 'refs/heads/main'
       run: |
