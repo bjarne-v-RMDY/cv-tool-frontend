@@ -53,15 +53,20 @@ jobs:
 
     - name: Deploy to Azure Container Instances
       if: github.ref == 'refs/heads/main'
-      uses: azure/container-instances-deploy@v1
-      with:
-        resource-group: ${{ env.AZURE_RESOURCE_GROUP }}
-        dns-name-label: ${{ env.AZURE_WEBAPP_NAME }}-${{ github.run_number }}
-        image: ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }}
-        registry-login-server: ${{ env.CONTAINER_REGISTRY }}.azurecr.io
-        registry-username: ${{ secrets.ACR_USERNAME }}
-        registry-password: ${{ secrets.ACR_PASSWORD }}
-        ports: 3000
-        cpu: 1
-        memory: 1
-        location: 'France Central'
+      run: |
+        # Create container instance
+        az container create \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --name ${{ env.AZURE_WEBAPP_NAME }}-${{ github.run_number }} \
+          --image ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} \
+          --registry-login-server ${{ env.CONTAINER_REGISTRY }}.azurecr.io \
+          --registry-username ${{ secrets.ACR_USERNAME }} \
+          --registry-password ${{ secrets.ACR_PASSWORD }} \
+          --dns-name-label ${{ env.AZURE_WEBAPP_NAME }}-${{ github.run_number }} \
+          --ports 3000 \
+          --cpu 1 \
+          --memory 1 \
+          --location 'France Central' \
+          --restart-policy Always
+
+          
