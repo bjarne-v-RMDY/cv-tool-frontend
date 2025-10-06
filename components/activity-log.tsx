@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { Activity, Upload, FileText, Users, CheckCircle, Clock, AlertCircle } from "lucide-react"
+import { Activity, Upload, Users, CheckCircle, Clock, AlertCircle } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
@@ -27,7 +27,7 @@ interface PaginationInfo {
     hasPrev: boolean
 }
 
-const getActivityIcon = (type: ActivityItem['type'], status: ActivityItem['status']) => {
+const getActivityIcon = (type: ActivityItem['type']) => {
     switch (type) {
         case 'upload':
             return <Upload className="h-4 w-4" />
@@ -88,7 +88,18 @@ export function ActivityLog() {
             const response = await fetch(`/api/activity-log?page=${page}&limit=10`)
             if (response.ok) {
                 const data = await response.json()
-                const formattedActivities = data.activities.map((activity: any) => ({
+                const formattedActivities = data.activities.map((activity: {
+                    Id: number
+                    Type: string
+                    Title: string
+                    Description: string
+                    CreatedAt: string
+                    Status: string
+                    UserId?: number
+                    FileName?: string
+                    Metadata?: string
+                    UpdatedAt: string
+                }) => ({
                     id: activity.Id,
                     type: activity.Type,
                     title: activity.Title,
@@ -185,7 +196,7 @@ export function ActivityLog() {
                             {activities.map((activity) => (
                                 <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
                                     <div className="flex-shrink-0 mt-0.5">
-                                        {getActivityIcon(activity.type, activity.status)}
+                                        {getActivityIcon(activity.type)}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between gap-2">
