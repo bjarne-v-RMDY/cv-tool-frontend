@@ -90,7 +90,7 @@ export async function POST(request: NextRequest) {
 
         // Add to activity log
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/activity-log`, {
+          await fetch(`${process.env.next_public_base_url || 'http://localhost:3000'}/api/activity-log`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -122,7 +122,7 @@ export async function POST(request: NextRequest) {
 
         // Add error to activity log
         try {
-          await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/api/activity-log`, {
+          await fetch(`${process.env.next_public_base_url || 'http://localhost:3000'}/api/activity-log`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
