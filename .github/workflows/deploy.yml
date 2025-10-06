@@ -70,21 +70,30 @@ jobs:
     - name: Deploy to Azure Container Apps
       if: github.ref == 'refs/heads/main'
       run: |
+        # Create container app without registry auth first
         az containerapp create \
           --name ${{ env.CONTAINER_APP_NAME }} \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
           --environment ${{ env.CONTAINER_APP_ENVIRONMENT }} \
-          --image ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} \
+          --image mcr.microsoft.com/azuredocs/containerapps-helloworld:latest \
           --target-port 3000 \
           --ingress external \
-          --registry-server ${{ env.CONTAINER_REGISTRY }}.azurecr.io \
-          --registry-username ${{ secrets.ACR_USERNAME }} \
-          --registry-password ${{ secrets.ACR_PASSWORD }} \
           --cpu 0.25 \
           --memory 0.5Gi \
           --min-replicas 0 \
           --max-replicas 1 \
-          --only-show-errors || \
+          --only-show-errors || echo "Container app already exists"
+        
+        # Configure registry authentication with clean secret names
+        az containerapp secret set \
+          --name ${{ env.CONTAINER_APP_NAME }} \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --secrets registry-server=${{ env.CONTAINER_REGISTRY }}.azurecr.io \
+          --secrets registry-username=${{ secrets.ACR_USERNAME }} \
+          --secrets registry-password=${{ secrets.ACR_PASSWORD }} \
+          --only-show-errors || echo "Secrets already exist"
+        
+        # Update container app with our image
         az containerapp update \
           --name ${{ env.CONTAINER_APP_NAME }} \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
