@@ -1,10 +1,11 @@
 import Link from "next/link"
 import { Upload } from "lucide-react"
+import { ActivityLog } from "@/components/activity-log"
 
 export default function Page() {
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4">
-      <div className="grid auto-rows-min gap-4 md:grid-cols-3">
+    <div className="flex flex-1 flex-col gap-4 p-4 h-full overflow-hidden">
+      <div className="grid auto-rows-min gap-4 md:grid-cols-3 flex-shrink-0">
         {/* Upload Card */}
         <Link href="/dashboard/upload" className="group">
           <div className="bg-card border rounded-xl p-6 h-full flex flex-col items-center justify-center gap-4 hover:bg-accent transition-colors">
@@ -14,7 +15,7 @@ export default function Page() {
             <div className="text-center">
               <h3 className="font-semibold text-lg">Upload Files</h3>
               <p className="text-sm text-muted-foreground mt-1">
-                Upload text files to get started
+                Upload CV files to get started
               </p>
             </div>
           </div>
@@ -24,7 +25,11 @@ export default function Page() {
         <div className="bg-muted/50 aspect-video rounded-xl" />
         <div className="bg-muted/50 aspect-video rounded-xl" />
       </div>
-      <div className="bg-muted/50 min-h-[100vh] flex-1 rounded-xl md:min-h-min" />
+
+      {/* Activity Log */}
+      <div className="flex-1 min-h-0">
+        <ActivityLog />
+      </div>
     </div>
   )
 }

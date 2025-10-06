@@ -19,12 +19,12 @@
 - [X] **Azure Application Insights** - For logging and monitoring (Basic tier)
 
 ### 1.2 Database Schema Design
-- [ ] **User Profiles Table** - Store candidate information
-- [ ] **Projects Table** - Store project assignments and details
-- [ ] **CV Data Table** - Store parsed CV information
-- [ ] **Matching Results Table** - Store candidate matching scores
-- [ ] **Schema Versioning Table** - Track dynamic schema changes
-- [ ] **Audit Log Table** - Track all operations and changes
+- [X] **User Profiles Table** - Store candidate information
+- [X] **Projects Table** - Store project assignments and details
+- [X] **CV Data Table** - Store parsed CV information
+- [X] **Matching Results Table** - Store candidate matching scores
+- [X] **Schema Versioning Table** - Track dynamic schema changes
+- [X] **Audit Log Table** - Track all operations and changes
 
 
 ## Phase 2: Core CV Processing (Epic E1)
