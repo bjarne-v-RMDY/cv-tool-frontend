@@ -42,9 +42,9 @@ export async function closeConnection(): Promise<void> {
 }
 
 // Helper function to execute queries
-export async function executeQuery<T = any>(
+export async function executeQuery<T = Record<string, unknown>>(
   query: string,
-  params?: Record<string, any>
+  params?: Record<string, unknown>
 ): Promise<T[]> {
   const connection = await getConnection()
   
@@ -64,7 +64,7 @@ export async function executeQuery<T = any>(
 // Helper function to execute a single query (for inserts/updates)
 export async function executeNonQuery(
   query: string,
-  params?: Record<string, any>
+  params?: Record<string, unknown>
 ): Promise<number> {
   const connection = await getConnection()
   

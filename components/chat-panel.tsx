@@ -3,7 +3,6 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
 import { Send, X } from "lucide-react"
 
 interface Message {

@@ -81,6 +81,7 @@ jobs:
             azure_sql_user=${{ secrets.azure_sql_user }} \
             azure_sql_password=${{ secrets.azure_sql_password }} \
             azure_storage_connection_string=${{ secrets.azure_storage_connection_string }} \
+            next_public_base_url=https://${{ env.CONTAINER_APP_NAME }}.${{ env.CONTAINER_APP_ENVIRONMENT }}.azurecontainerapps.io \
           --cpu 0.25 \
           --memory 0.5Gi \
           --min-replicas 0 \
@@ -97,6 +98,7 @@ jobs:
             azure_sql_user=${{ secrets.azure_sql_user }} \
             azure_sql_password=${{ secrets.azure_sql_password }} \
             azure_storage_connection_string=${{ secrets.azure_storage_connection_string }} \
+            next_public_base_url=https://${{ env.CONTAINER_APP_NAME }}.${{ env.CONTAINER_APP_ENVIRONMENT }}.azurecontainerapps.io \
           --cpu 0.25 \
           --memory 0.5Gi \
           --min-replicas 0 \
