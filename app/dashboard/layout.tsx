@@ -73,7 +73,7 @@ export default function DashboardLayout({
     return (
         <SidebarProvider>
             <AppSidebar />
-            <SidebarInset>
+            <SidebarInset className="h-screen flex flex-col">
                 <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
                     <SidebarTrigger className="-ml-1" />
                     <Separator
@@ -103,7 +103,7 @@ export default function DashboardLayout({
                         <ThemeToggle />
                     </div>
                 </header>
-                <div className="flex flex-1">
+                <div className="flex flex-1 min-h-0">
                     <div className={`flex-1 flex flex-col transition-all duration-300 ${isChatOpen ? 'mr-0' : 'mr-0'}`}>
                         {children}
                     </div>

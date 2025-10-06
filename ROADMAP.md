@@ -5,34 +5,36 @@
 
 **Tech Stack**: Azure, Next.js, Node.js, Azure Functions, Azure Queue Storage, Azure Logic Apps, SQL Database
 
+**Usage Profile**: Low-frequency application - optimized for simplicity and cost-effectiveness rather than high-scale performance.
+
 ---
 
 ## Phase 1: Foundation & Infrastructure Setup
 
 ### 1.1 Azure Infrastructure Setup
 - [X] **Azure Resource Group** - Create and configure resource group
-- [ ] **Azure SQL Database** - Set up database for CV and project data
-- [ ] **Azure Storage Account** - For file storage (CVs, assignments)
-- [ ] **Azure Queue Storage** - For processing queues
-- [ ] **Azure Application Insights** - For logging and monitoring
+- [X] **Azure SQL Database** - Set up database for CV and project data (Basic tier for low usage)
+- [X] **Azure Storage Account** - For file storage (CVs, assignments) (Standard tier)
+- [X] **Azure Queue Storage** - For processing queues (Basic tier)
+- [X] **Azure Application Insights** - For logging and monitoring (Basic tier)
 
 ### 1.2 Database Schema Design
-- [ ] **User Profiles Table** - Store candidate information
-- [ ] **Projects Table** - Store project assignments and details
-- [ ] **CV Data Table** - Store parsed CV information
-- [ ] **Matching Results Table** - Store candidate matching scores
-- [ ] **Schema Versioning Table** - Track dynamic schema changes
-- [ ] **Audit Log Table** - Track all operations and changes
+- [X] **User Profiles Table** - Store candidate information
+- [X] **Projects Table** - Store project assignments and details
+- [X] **CV Data Table** - Store parsed CV information
+- [X] **Matching Results Table** - Store candidate matching scores
+- [X] **Schema Versioning Table** - Track dynamic schema changes
+- [X] **Audit Log Table** - Track all operations and changes
 
 
 ## Phase 2: Core CV Processing (Epic E1)
 
 ### 2.1 CV Upload API
-- [ ] **REST API Endpoint** - `/api/cv/upload`
-- [ ] **File Validation** - PDF, DOC, DOCX support
-- [ ] **File Storage** - Store in Azure Blob Storage
-- [ ] **Queue Integration** - Add to processing queue
-- [ ] **Response Handling** - Return upload confirmation
+- [X] **REST API Endpoint** - `/api/cv/upload`
+- [X] **File Validation** - PDF, DOC, DOCX support
+- [X] **File Storage** - Store in Azure Blob Storage
+- [X] **Queue Integration** - Add to processing queue
+- [X] **Response Handling** - Return upload confirmation
 
 ### 2.2 CV Processing Pipeline
 - [ ] **Azure Function** - Triggered by queue messages
@@ -197,19 +199,20 @@
 
 ## Success Metrics
 
-### Technical Metrics
-- [ ] **API Response Time** - < 200ms for most endpoints
-- [ ] **System Uptime** - 99.9% availability
-- [ ] **Error Rate** - < 0.1% error rate
-- [ ] **Processing Time** - CV processing < 30 seconds
-- [ ] **Matching Accuracy** - > 90% relevant matches
+### Technical Metrics (Low-Usage Optimized)
+- [ ] **API Response Time** - < 2 seconds for most endpoints (acceptable for low usage)
+- [ ] **System Uptime** - 99% availability (sufficient for low usage)
+- [ ] **Error Rate** - < 1% error rate (acceptable for low usage)
+- [ ] **Processing Time** - CV processing < 2 minutes (acceptable for low usage)
+- [ ] **Matching Accuracy** - > 80% relevant matches (good enough for low usage)
 
 ### Business Metrics
 - [ ] **User Adoption** - Target user adoption rate
-- [ ] **Processing Volume** - CVs processed per day
+- [ ] **Processing Volume** - CVs processed per week/month
 - [ ] **Match Quality** - User satisfaction with matches
 - [ ] **Data Completeness** - Profile completion rate
 - [ ] **System Efficiency** - Reduced manual work
+- [ ] **Cost Efficiency** - Low operational costs for low usage
 
 ---
 
