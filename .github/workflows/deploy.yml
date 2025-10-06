@@ -75,6 +75,9 @@ jobs:
           --image crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} \
           --target-port 3000 \
           --ingress external \
+          --registry-server crrmdycvagent.azurecr.io \
+          --registry-username ${{ secrets.ACR_USERNAME }} \
+          --registry-password ${{ secrets.ACR_PASSWORD }} \
           --env-vars \
             azure_sql_server=${{ secrets.azure_sql_server }} \
             azure_sql_database=${{ secrets.azure_sql_database }} \
