@@ -51,6 +51,11 @@ jobs:
       with:
         creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+    - name: Register Container Instance provider
+      run: |
+        az provider register --namespace Microsoft.ContainerInstance
+        az provider show --namespace Microsoft.ContainerInstance --query "registrationState"
+
     - name: Deploy to Azure Container Instances
       if: github.ref == 'refs/heads/main'
       run: |
