@@ -25,16 +25,14 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: '18'
-        cache: 'npm'
 
     - name: Install dependencies
-      run: npm ci
-
-    - name: Run linting
-      run: npm run lint
+      run: |
+        corepack enable pnpm
+        pnpm install --frozen-lockfile
 
     - name: Build application
-      run: npm run build
+      run: pnpm run build
 
     - name: Login to Azure Container Registry
       uses: azure/docker-login@v1
@@ -68,41 +66,41 @@ jobs:
           --only-show-errors || echo "Environment already exists"
 
     - name: Deploy to Azure Container Apps
-  if: github.ref == 'refs/heads/main'
-  run: |
-    az containerapp create \
-      --name ${{ env.CONTAINER_APP_NAME }} \
-      --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-      --environment ${{ env.CONTAINER_APP_ENVIRONMENT }} \
-      --image crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} \
-      --target-port 3000 \
-      --ingress external \
-      --env-vars \
-        AZURE_SQL_SERVER=${{ secrets.AZURE_SQL_SERVER }} \
-        AZURE_SQL_DATABASE=${{ secrets.AZURE_SQL_DATABASE }} \
-        AZURE_SQL_USER=${{ secrets.AZURE_SQL_USER }} \
-        AZURE_SQL_PASSWORD=${{ secrets.AZURE_SQL_PASSWORD }} \
-        AZURE_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }} \
-      --cpu 0.25 \
-      --memory 0.5Gi \
-      --min-replicas 0 \
-      --max-replicas 1 \
-      --only-show-errors || \
-    # Update existing container app
-    az containerapp update \
-      --name ${{ env.CONTAINER_APP_NAME }} \
-      --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-      --image crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} \
-      --set-env-vars \
-        AZURE_SQL_SERVER=${{ secrets.AZURE_SQL_SERVER }} \
-        AZURE_SQL_DATABASE=${{ secrets.AZURE_SQL_DATABASE }} \
-        AZURE_SQL_USER=${{ secrets.AZURE_SQL_USER }} \
-        AZURE_SQL_PASSWORD=${{ secrets.AZURE_SQL_PASSWORD }} \
-        AZURE_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }} \
-      --cpu 0.25 \
-      --memory 0.5Gi \
-      --min-replicas 0 \
-      --max-replicas 1 \
-      --only-show-errors
+      if: github.ref == 'refs/heads/main'
+      run: |
+        az containerapp create \
+          --name ${{ env.CONTAINER_APP_NAME }} \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --environment ${{ env.CONTAINER_APP_ENVIRONMENT }} \
+          --image crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} \
+          --target-port 3000 \
+          --ingress external \
+          --env-vars \
+            azure_sql_server=${{ secrets.azure_sql_server }} \
+            azure_sql_database=${{ secrets.azure_sql_database }} \
+            azure_sql_user=${{ secrets.azure_sql_user }} \
+            azure_sql_password=${{ secrets.azure_sql_password }} \
+            azure_storage_connection_string=${{ secrets.azure_storage_connection_string }} \
+          --cpu 0.25 \
+          --memory 0.5Gi \
+          --min-replicas 0 \
+          --max-replicas 1 \
+          --only-show-errors || \
+        # Update existing container app
+        az containerapp update \
+          --name ${{ env.CONTAINER_APP_NAME }} \
+          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+          --image crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} \
+          --set-env-vars \
+            azure_sql_server=${{ secrets.azure_sql_server }} \
+            azure_sql_database=${{ secrets.azure_sql_database }} \
+            azure_sql_user=${{ secrets.azure_sql_user }} \
+            azure_sql_password=${{ secrets.azure_sql_password }} \
+            azure_storage_connection_string=${{ secrets.azure_storage_connection_string }} \
+          --cpu 0.25 \
+          --memory 0.5Gi \
+          --min-replicas 0 \
+          --max-replicas 1 \
+          --only-show-errors
 
           
