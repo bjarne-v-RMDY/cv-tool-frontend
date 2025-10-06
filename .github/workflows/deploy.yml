@@ -70,44 +70,31 @@ jobs:
     - name: Deploy to Azure Container Apps
       if: github.ref == 'refs/heads/main'
       run: |
-        # Create container app with registry authentication using YAML approach
-        cat > containerapp.yaml << EOF
-        properties:
-          configuration:
-            activeRevisionsMode: Single
-            ingress:
-              external: true
-              targetPort: 3000
-            registries:
-            - server: ${{ env.CONTAINER_REGISTRY }}.azurecr.io
-              username: ${{ secrets.ACR_USERNAME }}
-              passwordSecretRef: acr-password
-            secrets:
-            - name: acr-password
-              value: ${{ secrets.ACR_PASSWORD }}
-          template:
-            containers:
-            - name: ${{ env.CONTAINER_APP_NAME }}
-              image: ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }}
-              resources:
-                cpu: 0.25
-                memory: 0.5Gi
-            scale:
-              minReplicas: 0
-              maxReplicas: 1
-        EOF
-        
-        # Create or update container app using YAML
+        # Create container app with registry authentication using hardcoded registry name
         az containerapp create \
           --name ${{ env.CONTAINER_APP_NAME }} \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
           --environment ${{ env.CONTAINER_APP_ENVIRONMENT }} \
-          --yaml containerapp.yaml \
+          --image crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} \
+          --target-port 3000 \
+          --ingress external \
+          --registry-server crrmdycvagent.azurecr.io \
+          --registry-username ${{ secrets.ACR_USERNAME }} \
+          --registry-password ${{ secrets.ACR_PASSWORD }} \
+          --cpu 0.25 \
+          --memory 0.5Gi \
+          --min-replicas 0 \
+          --max-replicas 1 \
           --only-show-errors || \
+        # Update existing container app
         az containerapp update \
           --name ${{ env.CONTAINER_APP_NAME }} \
           --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --yaml containerapp.yaml \
+          --image crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} \
+          --cpu 0.25 \
+          --memory 0.5Gi \
+          --min-replicas 0 \
+          --max-replicas 1 \
           --only-show-errors
 
           
