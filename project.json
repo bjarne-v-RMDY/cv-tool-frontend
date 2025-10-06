@@ -1,0 +1,138 @@
+{
+    "project": {
+      "name": "AI CV Agent Platform",
+      "tech_stack": ["Azure", "Next.js", "Node.js", "Azure Functions", "Azure Queue Storage", "Azure Logic Apps", "SQL Database"],
+      "goal": "Automate CV parsing, project assignment analysis, candidate matching, and intelligent data enrichment using AI and Azure-based workflows."
+    },
+    "epics": [
+      {
+        "id": "E1",
+        "title": "CV Upload and Processing",
+        "user_story": "As an operations medewerker, I want to upload a CV so the agent can automatically extract and store the relevant projects linked to the person in the database.",
+        "process_flow": [
+          "User uploads CV via API endpoint.",
+          "CV file is stored and placed into an Azure Queue for processing.",
+          "Azure Function or Logic App is triggered to parse CV data.",
+          "Parsed data (title, period, role, technologies, etc.) is structured and stored in the database.",
+          "Projects are linked to the correct user profile.",
+          "Duplicates are checked; previous information is overwritten if needed.",
+          "Errors (e.g., unreadable file) are logged."
+        ],
+        "acceptance_criteria": {
+          "happy_flow": [
+            "Endpoint allows upload of CV files.",
+            "Files are correctly queued and processed in Azure.",
+            "Projects are parsed and linked to the correct profile.",
+            "Previous data is overwritten, no duplication of projects."
+          ],
+          "unhappy_flow": [
+            "Unreadable files produce clear error logs.",
+            "If parsing fails, the CV is stored but no projects are created.",
+            "No duplicate projects on re-upload.",
+            "Same project with different periods is stored as separate records."
+          ]
+        }
+      },
+      {
+        "id": "E2",
+        "title": "Project Assignment Upload and Enrichment",
+        "user_story": "As an operations medewerker, I want to upload project assignments so the agent can analyze and register them, enriching the database with any missing information.",
+        "process_flow": [
+          "Project assignment is uploaded via API endpoint (PDF or text).",
+          "File is stored and placed on a queue for processing.",
+          "Azure pipeline (Function or Logic App) is triggered.",
+          "Assignment data is parsed and structured.",
+          "Database is enriched with missing metadata if detected."
+        ],
+        "acceptance_criteria": {
+          "happy_flow": [
+            "API endpoint supports assignment uploads.",
+            "Assignments are correctly queued and processed.",
+            "Detected information enriches database automatically."
+          ],
+          "unhappy_flow": [
+            "Unreadable or corrupt files are logged clearly.",
+            "Processing errors do not break workflow."
+          ]
+        }
+      },
+      {
+        "id": "E3",
+        "title": "Candidate Matching API",
+        "user_story": "As a projectverantwoordelijke, I want to request the best matching candidates for a project assignment via API, to quickly identify who qualifies.",
+        "process_flow": [
+          "Assignment content and structured CV data are analyzed.",
+          "Matching algorithm computes relevance score for each candidate.",
+          "Results are sorted by match score and returned via API endpoint.",
+          "If no candidates match, an empty list with clear message is returned."
+        ],
+        "acceptance_criteria": {
+          "happy_flow": [
+            "Sleutelinformatie (role, technologies, duration) is correctly extracted.",
+            "Each project is linked to a unique project ID.",
+            "API endpoint returns candidates sorted by relevance.",
+            "Each result includes a score or explanation."
+          ],
+          "unhappy_flow": [
+            "No suitable candidates returns an empty list with a clear message."
+          ],
+          "ai_integration": [
+            "Use of AI Agent for semantic matching and ranking."
+          ]
+        }
+      },
+      {
+        "id": "E4",
+        "title": "Automatic Schema Expansion",
+        "user_story": "As a systeembeheerder, I want the database to automatically expand with missing key data (e.g., spoken language) detected in assignments, to ensure future matches are more complete.",
+        "process_flow": [
+          "Project assignment is analyzed.",
+          "System detects missing data fields not present in the CV model.",
+          "New fields are automatically added to the schema (e.g., 'spoken_language').",
+          "New fields are visible in profiles but initially empty.",
+          "All additions are logged for transparency."
+        ],
+        "acceptance_criteria": {
+          "happy_flow": [
+            "Missing fields are detected and added automatically.",
+            "Schema remains structured and readable.",
+            "Multiple new fields (e.g., language, sector, certificates) can be added at once."
+          ],
+          "unhappy_flow": [
+            "Conflicts with existing field names are handled safely.",
+            "System does not create duplicate or invalid fields."
+          ]
+        }
+      },
+      {
+        "id": "E5",
+        "title": "Intelligent Question Generation for Missing Data",
+        "user_story": "As a CV Agent user, I want automatically generated, user-friendly questions for missing profile data (e.g., 'Which languages do you speak?'), so the database stays complete and up to date.",
+        "process_flow": [
+          "System detects missing or new data fields for a person.",
+          "Generates a natural question for each missing field.",
+          "If no question template exists, a new one is generated automatically.",
+          "Questions are structured (text, input type, options).",
+          "Results are made available via API or Slack event."
+        ],
+        "acceptance_criteria": {
+          "happy_flow": [
+            "Missing fields are correctly detected.",
+            "Questions are natural and contextually relevant.",
+            "Multiple questions per profile are supported.",
+            "Data is structured for Slack or frontend integration."
+          ],
+          "unhappy_flow": [
+            "If generation fails, system logs a clear message but continues processing."
+          ]
+        }
+      }
+    ],
+    "global_requirements": {
+      "logging": "All failures (file errors, parsing issues, schema conflicts) must be logged in Azure Application Insights or equivalent.",
+      "security": "All uploads and API calls require authentication and authorization.",
+      "scalability": "System must support multiple concurrent uploads and automatic scaling in Azure.",
+      "data_integrity": "Duplicate prevention and conflict resolution logic must be implemented at the database level."
+    }
+  }
+  
