@@ -30,11 +30,11 @@
 ## Phase 2: Core CV Processing (Epic E1)
 
 ### 2.1 CV Upload API
-- [ ] **REST API Endpoint** - `/api/cv/upload`
-- [ ] **File Validation** - PDF, DOC, DOCX support
-- [ ] **File Storage** - Store in Azure Blob Storage
-- [ ] **Queue Integration** - Add to processing queue
-- [ ] **Response Handling** - Return upload confirmation
+- [X] **REST API Endpoint** - `/api/cv/upload`
+- [X] **File Validation** - PDF, DOC, DOCX support
+- [X] **File Storage** - Store in Azure Blob Storage
+- [X] **Queue Integration** - Add to processing queue
+- [X] **Response Handling** - Return upload confirmation
 
 ### 2.2 CV Processing Pipeline
 - [ ] **Azure Function** - Triggered by queue messages

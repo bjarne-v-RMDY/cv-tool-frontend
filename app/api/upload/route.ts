@@ -100,7 +100,13 @@ export async function POST(request: NextRequest) {
               title: 'CV Uploaded',
               description: `${file.name} uploaded successfully`,
               status: 'completed',
-              fileName: file.name
+              fileName: file.name,
+              metadata: {
+                uniqueFileName,
+                fileSize: file.size,
+                fileType: file.type,
+                storageUrl: blockBlobClient.url
+              }
             })
           })
         } catch (logError) {
@@ -126,7 +132,12 @@ export async function POST(request: NextRequest) {
               title: 'Upload Error',
               description: `Failed to upload ${file.name}`,
               status: 'failed',
-              fileName: file.name
+              fileName: file.name,
+              metadata: {
+                error: uploadError instanceof Error ? uploadError.message : 'Unknown error',
+                fileSize: file.size,
+                fileType: file.type
+              }
             })
           })
         } catch (logError) {

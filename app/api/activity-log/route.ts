@@ -1,38 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { executeQuery, executeNonQuery } from '@/lib/database'
 
 interface ActivityLogEntry {
-  id: string
+  id: number
   type: 'upload' | 'processing' | 'completed' | 'error' | 'matching'
   title: string
   description: string
-  timestamp: string
   status: 'pending' | 'processing' | 'completed' | 'failed'
-  userId?: string
+  userId?: number
   fileName?: string
+  metadata?: string
+  createdAt: string
+  updatedAt: string
 }
-
-// In-memory storage for demo purposes
-// In production, this would be stored in a database
-let activityLog: ActivityLogEntry[] = []
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { type, title, description, status, userId, fileName } = body
+    const { type, title, description, status, userId, fileName, metadata } = body
 
-    const newEntry: ActivityLogEntry = {
-      id: `activity_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+    const query = `
+      INSERT INTO ActivityLog (Type, Title, Description, Status, UserId, FileName, Metadata)
+      OUTPUT INSERTED.Id, INSERTED.CreatedAt, INSERTED.UpdatedAt
+      VALUES (@type, @title, @description, @status, @userId, @fileName, @metadata)
+    `
+
+    const result = await executeQuery<{
+      Id: number
+      CreatedAt: string
+      UpdatedAt: string
+    }>(query, {
       type,
       title,
       description,
-      timestamp: new Date().toISOString(),
       status,
-      userId,
-      fileName
-    }
+      userId: userId || null,
+      fileName: fileName || null,
+      metadata: metadata ? JSON.stringify(metadata) : null
+    })
 
-    activityLog.unshift(newEntry) // Add to beginning
-    activityLog = activityLog.slice(0, 100) // Keep only last 100 entries
+    const newEntry: ActivityLogEntry = {
+      id: result[0].Id,
+      type,
+      title,
+      description,
+      status,
+      userId: userId || undefined,
+      fileName: fileName || undefined,
+      metadata: metadata ? JSON.stringify(metadata) : undefined,
+      createdAt: result[0].CreatedAt,
+      updatedAt: result[0].UpdatedAt
+    }
 
     return NextResponse.json({ success: true, entry: newEntry })
   } catch (error) {
@@ -44,9 +62,43 @@ export async function POST(request: NextRequest) {
   }
 }
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    return NextResponse.json({ activities: activityLog })
+    const { searchParams } = new URL(request.url)
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '20')
+    const offset = (page - 1) * limit
+
+    // Get total count for pagination
+    const countQuery = 'SELECT COUNT(*) as total FROM ActivityLog'
+    const countResult = await executeQuery<{ total: number }>(countQuery)
+    const total = countResult[0].total
+
+    // Get paginated activities
+    const activitiesQuery = `
+      SELECT Id, Type, Title, Description, Status, UserId, FileName, Metadata, CreatedAt, UpdatedAt
+      FROM ActivityLog
+      ORDER BY CreatedAt DESC
+      OFFSET @offset ROWS
+      FETCH NEXT @limit ROWS ONLY
+    `
+
+    const activities = await executeQuery<ActivityLogEntry>(activitiesQuery, {
+      offset,
+      limit
+    })
+
+    return NextResponse.json({
+      activities,
+      pagination: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page < Math.ceil(total / limit),
+        hasPrev: page > 1
+      }
+    })
   } catch (error) {
     console.error('Activity log API error:', error)
     return NextResponse.json(

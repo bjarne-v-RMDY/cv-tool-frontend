@@ -6,16 +6,26 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 interface ActivityItem {
-    id: string
+    id: number
     type: 'upload' | 'processing' | 'completed' | 'error' | 'matching'
     title: string
     description: string
-    timestamp: Date
+    createdAt: Date
     status: 'pending' | 'processing' | 'completed' | 'failed'
-    userId?: string
+    userId?: number
     fileName?: string
+    metadata?: string
+    updatedAt: Date
 }
 
+interface PaginationInfo {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+    hasNext: boolean
+    hasPrev: boolean
+}
 
 const getActivityIcon = (type: ActivityItem['type'], status: ActivityItem['status']) => {
     switch (type) {
@@ -65,44 +75,90 @@ const formatTimestamp = (timestamp: Date) => {
 export function ActivityLog() {
     const [activities, setActivities] = React.useState<ActivityItem[]>([])
     const [isLoading, setIsLoading] = React.useState(true)
+    const [isLoadingMore, setIsLoadingMore] = React.useState(false)
+    const [pagination, setPagination] = React.useState<PaginationInfo | null>(null)
+    const [currentPage, setCurrentPage] = React.useState(1)
 
-    // Fetch activities from API
-    const fetchActivities = React.useCallback(async () => {
+    // Fetch activities from API with pagination
+    const fetchActivities = React.useCallback(async (page: number = 1, append: boolean = false) => {
         try {
-            const response = await fetch('/api/activity-log')
+            if (!append) setIsLoading(true)
+            else setIsLoadingMore(true)
+
+            const response = await fetch(`/api/activity-log?page=${page}&limit=10`)
             if (response.ok) {
                 const data = await response.json()
                 const formattedActivities = data.activities.map((activity: any) => ({
-                    id: activity.id,
-                    type: activity.type,
-                    title: activity.title,
-                    description: activity.description,
-                    timestamp: new Date(activity.timestamp),
-                    status: activity.status,
-                    userId: activity.userId,
-                    fileName: activity.fileName
+                    id: activity.Id,
+                    type: activity.Type,
+                    title: activity.Title,
+                    description: activity.Description,
+                    createdAt: new Date(activity.CreatedAt),
+                    status: activity.Status,
+                    userId: activity.UserId,
+                    fileName: activity.FileName,
+                    metadata: activity.Metadata,
+                    updatedAt: new Date(activity.UpdatedAt)
                 }))
-                setActivities(formattedActivities)
+
+                if (append) {
+                    setActivities(prev => [...prev, ...formattedActivities])
+                } else {
+                    setActivities(formattedActivities)
+                }
+
+                setPagination(data.pagination)
+                setCurrentPage(page)
             }
         } catch (error) {
             console.error('Failed to fetch activities:', error)
-            // Keep empty array if API fails
-            setActivities([])
+            if (!append) {
+                setActivities([])
+            }
         } finally {
             setIsLoading(false)
+            setIsLoadingMore(false)
         }
     }, [])
 
-    // Initial fetch and periodic updates
+    // Load more activities (infinite scroll)
+    const loadMore = React.useCallback(() => {
+        if (pagination?.hasNext && !isLoadingMore) {
+            fetchActivities(currentPage + 1, true)
+        }
+    }, [pagination, currentPage, isLoadingMore, fetchActivities])
+
+    // Initial fetch and periodic updates for latest activities
     React.useEffect(() => {
-        fetchActivities()
+        fetchActivities(1, false)
 
         const interval = setInterval(() => {
-            fetchActivities()
-        }, 10000) // Update every 10 seconds
+            // Only refresh the first page to get latest activities
+            fetchActivities(1, false)
+        }, 15000) // Update every 15 seconds
 
         return () => clearInterval(interval)
     }, [fetchActivities])
+
+    // Infinite scroll handler
+    const scrollContainerRef = React.useRef<HTMLDivElement>(null)
+
+    React.useEffect(() => {
+        const container = scrollContainerRef.current
+        if (!container) return
+
+        const handleScroll = () => {
+            const { scrollTop, scrollHeight, clientHeight } = container
+            const isNearBottom = scrollTop + clientHeight >= scrollHeight - 100
+
+            if (isNearBottom) {
+                loadMore()
+            }
+        }
+
+        container.addEventListener('scroll', handleScroll)
+        return () => container.removeEventListener('scroll', handleScroll)
+    }, [loadMore])
 
     return (
         <Card className="h-full flex flex-col">
@@ -110,43 +166,65 @@ export function ActivityLog() {
                 <CardTitle className="flex items-center gap-2">
                     <Activity className="h-5 w-5" />
                     Activity Log
+                    {pagination && (
+                        <Badge variant="secondary" className="ml-auto">
+                            {pagination.total} total
+                        </Badge>
+                    )}
                 </CardTitle>
             </CardHeader>
             <CardContent className="pt-0 flex-1 overflow-hidden">
-                <div className="space-y-4 h-full overflow-y-auto">
+                <div ref={scrollContainerRef} className="space-y-4 h-full overflow-y-auto">
                     {isLoading ? (
                         <div className="text-center py-8 text-muted-foreground">
                             <Activity className="h-8 w-8 mx-auto mb-2 opacity-50 animate-pulse" />
                             <p>Loading activities...</p>
                         </div>
                     ) : activities.length > 0 ? (
-                        activities.map((activity) => (
-                            <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                                <div className="flex-shrink-0 mt-0.5">
-                                    {getActivityIcon(activity.type, activity.status)}
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center justify-between gap-2">
-                                        <h4 className="text-sm font-medium truncate">{activity.title}</h4>
-                                        <Badge variant="secondary" className={`text-xs ${getStatusColor(activity.status)}`}>
-                                            {activity.status}
-                                        </Badge>
+                        <>
+                            {activities.map((activity) => (
+                                <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                                    <div className="flex-shrink-0 mt-0.5">
+                                        {getActivityIcon(activity.type, activity.status)}
                                     </div>
-                                    <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
-                                    <div className="flex items-center gap-2 mt-2">
-                                        <span className="text-xs text-muted-foreground">
-                                            {formatTimestamp(activity.timestamp)}
-                                        </span>
-                                        {activity.fileName && (
-                                            <span className="text-xs text-muted-foreground">•</span>
-                                        )}
-                                        {activity.fileName && (
-                                            <span className="text-xs text-muted-foreground">{activity.fileName}</span>
-                                        )}
+                                    <div className="flex-1 min-w-0">
+                                        <div className="flex items-center justify-between gap-2">
+                                            <h4 className="text-sm font-medium truncate">{activity.title}</h4>
+                                            <Badge variant="secondary" className={`text-xs ${getStatusColor(activity.status)}`}>
+                                                {activity.status}
+                                            </Badge>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
+                                        <div className="flex items-center gap-2 mt-2">
+                                            <span className="text-xs text-muted-foreground">
+                                                {formatTimestamp(activity.createdAt)}
+                                            </span>
+                                            {activity.fileName && (
+                                                <span className="text-xs text-muted-foreground">•</span>
+                                            )}
+                                            {activity.fileName && (
+                                                <span className="text-xs text-muted-foreground">{activity.fileName}</span>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-                            </div>
-                        ))
+                            ))}
+
+                            {/* Loading more indicator */}
+                            {isLoadingMore && (
+                                <div className="text-center py-4 text-muted-foreground">
+                                    <Activity className="h-6 w-6 mx-auto mb-2 opacity-50 animate-pulse" />
+                                    <p className="text-sm">Loading more...</p>
+                                </div>
+                            )}
+
+                            {/* End of list indicator */}
+                            {!pagination?.hasNext && activities.length > 0 && (
+                                <div className="text-center py-4 text-muted-foreground">
+                                    <p className="text-sm">No more activities</p>
+                                </div>
+                            )}
+                        </>
                     ) : (
                         <div className="text-center py-8 text-muted-foreground">
                             <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
