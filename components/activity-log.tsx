@@ -16,104 +16,6 @@ interface ActivityItem {
     fileName?: string
 }
 
-const mockActivities: ActivityItem[] = [
-    {
-        id: '1',
-        type: 'upload',
-        title: 'CV Uploaded',
-        description: 'john.doe.pdf uploaded successfully',
-        timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-        status: 'completed',
-        userId: 'user-123',
-        fileName: 'john.doe.pdf'
-    },
-    {
-        id: '2',
-        type: 'processing',
-        title: 'CV Processing',
-        description: 'jane.smith.pdf is being processed',
-        timestamp: new Date(Date.now() - 3 * 60 * 1000), // 3 minutes ago
-        status: 'processing',
-        userId: 'user-456',
-        fileName: 'jane.smith.pdf'
-    },
-    {
-        id: '3',
-        type: 'completed',
-        title: 'CV Processed',
-        description: 'mike.wilson.pdf processed successfully - 3 projects extracted',
-        timestamp: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
-        status: 'completed',
-        userId: 'user-789',
-        fileName: 'mike.wilson.pdf'
-    },
-    {
-        id: '4',
-        type: 'matching',
-        title: 'Candidate Matching',
-        description: 'Found 5 matching candidates for React Developer position',
-        timestamp: new Date(Date.now() - 1 * 60 * 1000), // 1 minute ago
-        status: 'completed'
-    },
-    {
-        id: '5',
-        type: 'error',
-        title: 'Processing Error',
-        description: 'Failed to process sarah.jones.pdf - file format not supported',
-        timestamp: new Date(Date.now() - 30 * 1000), // 30 seconds ago
-        status: 'failed',
-        userId: 'user-101',
-        fileName: 'sarah.jones.pdf'
-    },
-    {
-        id: '10',
-        type: 'upload',
-        title: 'CV Uploaded',
-        description: 'john.doe.pdf uploaded successfully',
-        timestamp: new Date(Date.now() - 5 * 60 * 1000), // 5 minutes ago
-        status: 'completed',
-        userId: 'user-123',
-        fileName: 'john.doe.pdf'
-    },
-    {
-        id: '22',
-        type: 'processing',
-        title: 'CV Processing',
-        description: 'jane.smith.pdf is being processed',
-        timestamp: new Date(Date.now() - 3 * 60 * 1000), // 3 minutes ago
-        status: 'processing',
-        userId: 'user-456',
-        fileName: 'jane.smith.pdf'
-    },
-    {
-        id: '33',
-        type: 'completed',
-        title: 'CV Processed',
-        description: 'mike.wilson.pdf processed successfully - 3 projects extracted',
-        timestamp: new Date(Date.now() - 2 * 60 * 1000), // 2 minutes ago
-        status: 'completed',
-        userId: 'user-789',
-        fileName: 'mike.wilson.pdf'
-    },
-    {
-        id: '42',
-        type: 'matching',
-        title: 'Candidate Matching',
-        description: 'Found 5 matching candidates for React Developer position',
-        timestamp: new Date(Date.now() - 1 * 60 * 1000), // 1 minute ago
-        status: 'completed'
-    },
-    {
-        id: '51',
-        type: 'error',
-        title: 'Processing Error',
-        description: 'Failed to process sarah.jones.pdf - file format not supported',
-        timestamp: new Date(Date.now() - 30 * 1000), // 30 seconds ago
-        status: 'failed',
-        userId: 'user-101',
-        fileName: 'sarah.jones.pdf'
-    }
-]
 
 const getActivityIcon = (type: ActivityItem['type'], status: ActivityItem['status']) => {
     switch (type) {
@@ -161,17 +63,46 @@ const formatTimestamp = (timestamp: Date) => {
 }
 
 export function ActivityLog() {
-    const [activities, setActivities] = React.useState<ActivityItem[]>(mockActivities)
+    const [activities, setActivities] = React.useState<ActivityItem[]>([])
+    const [isLoading, setIsLoading] = React.useState(true)
 
-    // Simulate real-time updates
+    // Fetch activities from API
+    const fetchActivities = React.useCallback(async () => {
+        try {
+            const response = await fetch('/api/activity-log')
+            if (response.ok) {
+                const data = await response.json()
+                const formattedActivities = data.activities.map((activity: any) => ({
+                    id: activity.id,
+                    type: activity.type,
+                    title: activity.title,
+                    description: activity.description,
+                    timestamp: new Date(activity.timestamp),
+                    status: activity.status,
+                    userId: activity.userId,
+                    fileName: activity.fileName
+                }))
+                setActivities(formattedActivities)
+            }
+        } catch (error) {
+            console.error('Failed to fetch activities:', error)
+            // Keep empty array if API fails
+            setActivities([])
+        } finally {
+            setIsLoading(false)
+        }
+    }, [])
+
+    // Initial fetch and periodic updates
     React.useEffect(() => {
+        fetchActivities()
+
         const interval = setInterval(() => {
-            // In a real app, this would fetch from your API
-            setActivities(prev => [...prev].sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime()))
-        }, 30000) // Update every 30 seconds
+            fetchActivities()
+        }, 10000) // Update every 10 seconds
 
         return () => clearInterval(interval)
-    }, [])
+    }, [fetchActivities])
 
     return (
         <Card className="h-full flex flex-col">
@@ -183,42 +114,47 @@ export function ActivityLog() {
             </CardHeader>
             <CardContent className="pt-0 flex-1 overflow-hidden">
                 <div className="space-y-4 h-full overflow-y-auto">
-                    {activities.map((activity) => (
-                        <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
-                            <div className="flex-shrink-0 mt-0.5">
-                                {getActivityIcon(activity.type, activity.status)}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center justify-between gap-2">
-                                    <h4 className="text-sm font-medium truncate">{activity.title}</h4>
-                                    <Badge variant="secondary" className={`text-xs ${getStatusColor(activity.status)}`}>
-                                        {activity.status}
-                                    </Badge>
-                                </div>
-                                <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
-                                <div className="flex items-center gap-2 mt-2">
-                                    <span className="text-xs text-muted-foreground">
-                                        {formatTimestamp(activity.timestamp)}
-                                    </span>
-                                    {activity.fileName && (
-                                        <span className="text-xs text-muted-foreground">•</span>
-                                    )}
-                                    {activity.fileName && (
-                                        <span className="text-xs text-muted-foreground">{activity.fileName}</span>
-                                    )}
-                                </div>
-                            </div>
+                    {isLoading ? (
+                        <div className="text-center py-8 text-muted-foreground">
+                            <Activity className="h-8 w-8 mx-auto mb-2 opacity-50 animate-pulse" />
+                            <p>Loading activities...</p>
                         </div>
-                    ))}
+                    ) : activities.length > 0 ? (
+                        activities.map((activity) => (
+                            <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
+                                <div className="flex-shrink-0 mt-0.5">
+                                    {getActivityIcon(activity.type, activity.status)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <h4 className="text-sm font-medium truncate">{activity.title}</h4>
+                                        <Badge variant="secondary" className={`text-xs ${getStatusColor(activity.status)}`}>
+                                            {activity.status}
+                                        </Badge>
+                                    </div>
+                                    <p className="text-sm text-muted-foreground mt-1">{activity.description}</p>
+                                    <div className="flex items-center gap-2 mt-2">
+                                        <span className="text-xs text-muted-foreground">
+                                            {formatTimestamp(activity.timestamp)}
+                                        </span>
+                                        {activity.fileName && (
+                                            <span className="text-xs text-muted-foreground">•</span>
+                                        )}
+                                        {activity.fileName && (
+                                            <span className="text-xs text-muted-foreground">{activity.fileName}</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        ))
+                    ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                            <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                            <p>No activity yet</p>
+                            <p className="text-sm">Upload a CV to see activity here</p>
+                        </div>
+                    )}
                 </div>
-
-                {activities.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                        <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                        <p>No activity yet</p>
-                        <p className="text-sm">Upload a CV to see activity here</p>
-                    </div>
-                )}
             </CardContent>
         </Card>
     )
