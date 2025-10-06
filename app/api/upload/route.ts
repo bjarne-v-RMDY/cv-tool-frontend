@@ -3,11 +3,16 @@ import { BlobServiceClient } from '@azure/storage-blob'
 import { v4 as uuidv4 } from 'uuid'
 
 // Azure Storage configuration
-const AZURE_STORAGE_CONNECTION_STRING = process.env.azure_storage_connection_string
 const CONTAINER_NAME = 'cv-files'
 
-// Initialize Azure Blob Service Client
-const blobServiceClient = BlobServiceClient.fromConnectionString(AZURE_STORAGE_CONNECTION_STRING!)
+// Helper function to get BlobServiceClient
+function getBlobServiceClient() {
+  const connectionString = process.env.azure_storage_connection_string
+  if (!connectionString) {
+    throw new Error('Azure Storage connection string is not configured')
+  }
+  return BlobServiceClient.fromConnectionString(connectionString)
+}
 
 // File validation
 const ALLOWED_FILE_TYPES = ['application/pdf', 'text/plain']
@@ -64,6 +69,7 @@ export async function POST(request: NextRequest) {
         const uniqueFileName = `${uuidv4()}.${fileExtension}`
         
         // Upload to Azure Storage
+        const blobServiceClient = getBlobServiceClient()
         const containerClient = blobServiceClient.getContainerClient(CONTAINER_NAME)
         const blockBlobClient = containerClient.getBlockBlobClient(uniqueFileName)
         
