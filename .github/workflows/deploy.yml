@@ -9,7 +9,7 @@ on:
 env:
   AZURE_WEBAPP_NAME: cvtool-ui
   AZURE_RESOURCE_GROUP: az-rg-rmdy-cv-agent
-  CONTAINER_REGISTRY: crRmdyCvAgent        # Your original casing restored
+  CONTAINER_REGISTRY: crRmdyCvAgent
   CONTAINER_APP_ENVIRONMENT: cvtool-env
   CONTAINER_APP_NAME: cvtool-app
   LOG_WORKSPACE_NAME: cvtool-logs
@@ -18,7 +18,7 @@ env:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-
+    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -36,29 +36,34 @@ jobs:
       - name: Build application
         run: pnpm run build
 
+      # Login to ACR
       - name: Login to Azure Container Registry
         uses: azure/docker-login@v1
         with:
-          login-server: crrmdycvagent.azurecr.io     # must be lowercase DNS name
+          login-server: crrmdycvagent.azurecr.io
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Build and push Docker image
         run: |
-          docker build -t crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} .
-          docker push crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }}
+          IMAGE="crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }}"
+          echo "Building image: $IMAGE"
+          docker build -t $IMAGE .
+          docker push $IMAGE
 
+      # Login to Azure
       - name: Login to Azure
         uses: azure/login@v1
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-      - name: Register Container Apps provider
+      - name: Ensure Azure Container Apps provider is registered
         run: |
           az provider register --namespace Microsoft.App --wait
-          az provider show --namespace Microsoft.App --query "registrationState"
+          az provider register --namespace Microsoft.OperationalInsights --wait
 
-      - name: Ensure Log Analytics workspace exists
+      # Create Log Analytics workspace (once)
+      - name: Ensure Log Analytics Workspace exists
         run: |
           if ! az monitor log-analytics workspace show \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
@@ -67,45 +72,41 @@ jobs:
             az monitor log-analytics workspace create \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
               --workspace-name ${{ env.LOG_WORKSPACE_NAME }} \
-              --location "${{ env.LOCATION }}"
+              --location ${{ env.LOCATION }} \
+              --only-show-errors
           else
             echo "Log Analytics workspace already exists."
           fi
 
-      - name: Create Container Apps Environment (if not exists)
-        if: github.ref == 'refs/heads/main'
+      # Create Container App Environment (once)
+      - name: Ensure Container Apps Environment exists
         run: |
+          LOG_ANALYTICS_ID=$(az monitor log-analytics workspace show \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --workspace-name ${{ env.LOG_WORKSPACE_NAME }} \
+            --query "id" -o tsv)
+
           if ! az containerapp env show \
             --name ${{ env.CONTAINER_APP_ENVIRONMENT }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
             echo "Creating Container App Environment..."
-            LOG_WORKSPACE_ID=$(az monitor log-analytics workspace show \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --workspace-name ${{ env.LOG_WORKSPACE_NAME }} \
-              --query customerId -o tsv)
-            LOG_WORKSPACE_KEY=$(az monitor log-analytics workspace get-shared-keys \
-              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --workspace-name ${{ env.LOG_WORKSPACE_NAME }} \
-              --query primarySharedKey -o tsv)
-
             az containerapp env create \
               --name ${{ env.CONTAINER_APP_ENVIRONMENT }} \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-              --location "${{ env.LOCATION }}" \
-              --logs-workspace-id $LOG_WORKSPACE_ID \
-              --logs-workspace-key $LOG_WORKSPACE_KEY \
+              --location ${{ env.LOCATION }} \
+              --logs-workspace-id $LOG_ANALYTICS_ID \
               --only-show-errors
           else
             echo "Container App Environment already exists."
           fi
 
-            - name: Deploy or update Azure Container App
+      # Create or update Container App
+      - name: Deploy or update Azure Container App
         if: github.ref == 'refs/heads/main'
         run: |
           IMAGE="crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }}"
           echo "Deploying image: $IMAGE"
 
-          # Create if missing, otherwise update
           if ! az containerapp show \
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
@@ -153,4 +154,3 @@ jobs:
               --scale-max-replicas 1 \
               --only-show-errors
           fi
-
