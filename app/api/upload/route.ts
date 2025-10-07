@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
           uploadedAt: new Date().toISOString(),
           etag: uploadResponse.etag
         })
-
+        console.log(process.env.next_public_base_url)
         // Add to activity log
         try {
           await fetch(`${process.env.next_public_base_url || 'http://localhost:3000'}/api/activity-log`, {
