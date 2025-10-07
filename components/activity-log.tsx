@@ -146,7 +146,7 @@ export function ActivityLog() {
         const interval = setInterval(() => {
             // Only refresh the first page to get latest activities
             fetchActivities(1, false)
-        }, 15000) // Update every 15 seconds
+        }, 60000) // Update every min
 
         return () => clearInterval(interval)
     }, [fetchActivities])
