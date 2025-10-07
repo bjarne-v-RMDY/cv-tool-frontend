@@ -9,7 +9,7 @@ on:
 env:
   AZURE_WEBAPP_NAME: cvtool-ui
   AZURE_RESOURCE_GROUP: az-rg-rmdy-cv-agent
-  CONTAINER_REGISTRY: crRmdyCvAgent
+  CONTAINER_REGISTRY: crRmdyCvAgent        # Your original casing restored
   CONTAINER_APP_ENVIRONMENT: cvtool-env
   CONTAINER_APP_NAME: cvtool-app
   LOG_WORKSPACE_NAME: cvtool-logs
@@ -39,14 +39,14 @@ jobs:
       - name: Login to Azure Container Registry
         uses: azure/docker-login@v1
         with:
-          login-server: ${{ env.CONTAINER_REGISTRY }}.azurecr.io
+          login-server: crrmdycvagent.azurecr.io     # must be lowercase DNS name
           username: ${{ secrets.ACR_USERNAME }}
           password: ${{ secrets.ACR_PASSWORD }}
 
       - name: Build and push Docker image
         run: |
-          docker build -t ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} .
-          docker push ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }}
+          docker build -t crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} .
+          docker push crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }}
 
       - name: Login to Azure
         uses: azure/login@v1
@@ -102,10 +102,10 @@ jobs:
       - name: Deploy or update Azure Container App
         if: github.ref == 'refs/heads/main'
         run: |
-          IMAGE="${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }}"
+          IMAGE="crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }}"
           echo "Deploying image: $IMAGE"
 
-          # Try to create, update if exists
+          # Create if missing, otherwise update
           if ! az containerapp show \
             --name ${{ env.CONTAINER_APP_NAME }} \
             --resource-group ${{ env.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
@@ -118,7 +118,7 @@ jobs:
               --image $IMAGE \
               --target-port 3000 \
               --ingress external \
-              --registry-server ${{ env.CONTAINER_REGISTRY }}.azurecr.io \
+              --registry-server crrmdycvagent.azurecr.io \
               --registry-username ${{ secrets.ACR_USERNAME }} \
               --registry-password ${{ secrets.ACR_PASSWORD }} \
               --env-vars \
