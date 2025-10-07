@@ -3,8 +3,6 @@ name: Deploy to Azure
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 env:
   AZURE_WEBAPP_NAME: cvtool-ui
@@ -116,11 +114,11 @@ jobs:
               --name ${{ env.CONTAINER_APP_NAME }} \
               --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
               --image "$IMAGE" \
-              --set-env-vars azure_sql_server=${{ secrets.azure_sql_server }} azure_sql_database=${{ secrets.azure_sql_database }} azure_sql_user=${{ secrets.azure_sql_user }} azure_sql_password=${{ secrets.azure_sql_password }} azure_storage_connection_string=${{ secrets.azure_storage_connection_string }} next_public_base_url=https://${{ env.CONTAINER_APP_NAME }}.${{ env.CONTAINER_APP_ENVIRONMENT }}.azurecontainerapps.io \
               --cpu 0.25 \
               --memory 0.5Gi \
               --min-replicas 0 \
               --max-replicas 1 \
+              --set-env-vars "azure_sql_server=${{ secrets.azure_sql_server }}" "azure_sql_database=${{ secrets.azure_sql_database }}" "azure_sql_user=${{ secrets.azure_sql_user }}" "azure_sql_password=${{ secrets.azure_sql_password }}" "azure_storage_connection_string=${{ secrets.azure_storage_connection_string }}" "next_public_base_url=https://${{ env.CONTAINER_APP_NAME }}.${{ env.CONTAINER_APP_ENVIRONMENT }}.azurecontainerapps.io" \
               --only-show-errors
           else
             echo "Creating new Container App..."
@@ -134,10 +132,10 @@ jobs:
               --registry-server crrmdycvagent.azurecr.io \
               --registry-username ${{ secrets.ACR_USERNAME }} \
               --registry-password ${{ secrets.ACR_PASSWORD }} \
-              --env-vars azure_sql_server=${{ secrets.azure_sql_server }} azure_sql_database=${{ secrets.azure_sql_database }} azure_sql_user=${{ secrets.azure_sql_user }} azure_sql_password=${{ secrets.azure_sql_password }} azure_storage_connection_string=${{ secrets.azure_storage_connection_string }} next_public_base_url=https://${{ env.CONTAINER_APP_NAME }}.${{ env.CONTAINER_APP_ENVIRONMENT }}.azurecontainerapps.io \
               --cpu 0.25 \
               --memory 0.5Gi \
               --min-replicas 0 \
               --max-replicas 1 \
+              --env-vars "azure_sql_server=${{ secrets.azure_sql_server }}" "azure_sql_database=${{ secrets.azure_sql_database }}" "azure_sql_user=${{ secrets.azure_sql_user }}" "azure_sql_password=${{ secrets.azure_sql_password }}" "azure_storage_connection_string=${{ secrets.azure_storage_connection_string }}" "next_public_base_url=https://${{ env.CONTAINER_APP_NAME }}.${{ env.CONTAINER_APP_ENVIRONMENT }}.azurecontainerapps.io" \
               --only-show-errors
           fi
