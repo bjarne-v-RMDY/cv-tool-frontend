@@ -99,7 +99,7 @@ jobs:
             echo "Container App Environment already exists."
           fi
 
-      - name: Deploy or update Azure Container App
+            - name: Deploy or update Azure Container App
         if: github.ref == 'refs/heads/main'
         run: |
           IMAGE="crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }}"
@@ -133,6 +133,7 @@ jobs:
               --scale-min-replicas 0 \
               --scale-max-replicas 1 \
               --only-show-errors
+
           else
             echo "Updating existing Container App..."
             az containerapp update \
@@ -152,3 +153,4 @@ jobs:
               --scale-max-replicas 1 \
               --only-show-errors
           fi
+
