@@ -24,8 +24,8 @@ const data = {
           url: "/dashboard",
         },
         {
-          title: "Upload",
-          url: "/dashboard/upload",
+          title: "CVs",
+          url: "/dashboard/cvs",
         },
       ],
     },

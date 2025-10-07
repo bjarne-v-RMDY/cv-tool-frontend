@@ -1,8 +1,9 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Upload, FileText, X, CheckCircle, AlertCircle, Loader2 } from "lucide-react"
-import { useState, useCallback } from "react"
+import { Upload, FileText, X, CheckCircle, AlertCircle, Loader2, Download } from "lucide-react"
+import { useState, useCallback, useEffect } from "react"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 interface UploadResult {
     fileName: string
@@ -18,12 +19,24 @@ interface UploadError {
     error: string
 }
 
-export default function UploadPage() {
+interface CVFile {
+    name: string
+    uniqueName: string
+    size: number
+    uploadedAt: string
+    contentType: string
+    url: string
+    metadata: Record<string, string>
+}
+
+export default function CVsPage() {
     const [files, setFiles] = useState<File[]>([])
     const [isDragOver, setIsDragOver] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
     const [uploadResults, setUploadResults] = useState<UploadResult[]>([])
     const [uploadErrors, setUploadErrors] = useState<UploadError[]>([])
+    const [cvFiles, setCvFiles] = useState<CVFile[]>([])
+    const [isLoadingCVs, setIsLoadingCVs] = useState(true)
 
     const handleDragOver = useCallback((e: React.DragEvent) => {
         e.preventDefault()
@@ -61,6 +74,42 @@ export default function UploadPage() {
         setFiles(prev => prev.filter((_, i) => i !== index))
     }, [])
 
+    const fetchCVs = useCallback(async () => {
+        try {
+            setIsLoadingCVs(true)
+            const response = await fetch('/api/cvs')
+            if (response.ok) {
+                const data = await response.json()
+                setCvFiles(data.files || [])
+            }
+        } catch (error) {
+            console.error('Failed to fetch CVs:', error)
+        } finally {
+            setIsLoadingCVs(false)
+        }
+    }, [])
+
+    const handleDownload = useCallback(async (fileName: string, originalName: string) => {
+        try {
+            const response = await fetch(`/api/cvs/download?file=${encodeURIComponent(fileName)}`)
+            if (response.ok) {
+                const blob = await response.blob()
+                const url = window.URL.createObjectURL(blob)
+                const a = document.createElement('a')
+                a.href = url
+                a.download = originalName
+                document.body.appendChild(a)
+                a.click()
+                window.URL.revokeObjectURL(url)
+                document.body.removeChild(a)
+            } else {
+                console.error('Download failed')
+            }
+        } catch (error) {
+            console.error('Download error:', error)
+        }
+    }, [])
+
     const handleUpload = useCallback(async () => {
         if (files.length === 0) return
 
@@ -85,6 +134,7 @@ export default function UploadPage() {
                 setUploadResults(result.uploadedFiles || [])
                 setUploadErrors(result.errors || [])
                 setFiles([]) // Clear files after successful upload
+                fetchCVs() // Refresh CV list
             } else {
                 setUploadErrors([{ fileName: 'Upload failed', error: result.error || 'Unknown error' }])
             }
@@ -94,15 +144,19 @@ export default function UploadPage() {
         } finally {
             setIsUploading(false)
         }
-    }, [files])
+    }, [files, fetchCVs])
+
+    useEffect(() => {
+        fetchCVs()
+    }, [fetchCVs])
 
     return (
         <div className="flex flex-1 flex-col gap-4 p-4">
             <div className="space-y-4">
                 <div>
-                    <h1 className="text-2xl font-bold">Upload CV Files</h1>
+                    <h1 className="text-2xl font-bold">CV Management</h1>
                     <p className="text-muted-foreground">
-                        Upload PDF or TXT files to process with CV-Tool
+                        Upload, view, and manage CV files
                     </p>
                 </div>
 
@@ -261,6 +315,62 @@ export default function UploadPage() {
                         )}
                     </div>
                 )}
+
+                {/* Uploaded CVs List */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center justify-between">
+                            <span>Uploaded CVs</span>
+                            {cvFiles.length > 0 && (
+                                <span className="text-sm font-normal text-muted-foreground">
+                                    {cvFiles.length} file{cvFiles.length !== 1 ? 's' : ''}
+                                </span>
+                            )}
+                        </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        {isLoadingCVs ? (
+                            <div className="text-center py-8 text-muted-foreground">
+                                <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
+                                <p>Loading CVs...</p>
+                            </div>
+                        ) : cvFiles.length > 0 ? (
+                            <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                                {cvFiles.map((cv, index) => (
+                                    <div
+                                        key={cv.uniqueName}
+                                        className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                                    >
+                                        <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-sm font-medium truncate">
+                                                {cv.name}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {(cv.size / 1024).toFixed(1)} KB • {new Date(cv.uploadedAt).toLocaleDateString()} {new Date(cv.uploadedAt).toLocaleTimeString()}
+                                            </p>
+                                        </div>
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            onClick={() => handleDownload(cv.uniqueName, cv.name)}
+                                            className="flex-shrink-0"
+                                        >
+                                            <Download className="h-4 w-4 mr-2" />
+                                            Download
+                                        </Button>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-8 text-muted-foreground">
+                                <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                <p>No CVs uploaded yet</p>
+                                <p className="text-sm">Upload your first CV to get started</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
             </div>
         </div>
     )
