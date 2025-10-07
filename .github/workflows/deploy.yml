@@ -9,103 +9,146 @@ on:
 env:
   AZURE_WEBAPP_NAME: cvtool-ui
   AZURE_RESOURCE_GROUP: az-rg-rmdy-cv-agent
-  CONTAINER_REGISTRY: crRmdyCvAgent
+  CONTAINER_REGISTRY: crrmdycvagent
   CONTAINER_APP_ENVIRONMENT: cvtool-env
   CONTAINER_APP_NAME: cvtool-app
+  LOG_WORKSPACE_NAME: cvtool-logs
+  LOCATION: 'France Central'
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
-    
+
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-    - name: Set up Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: '18'
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
 
-    - name: Install dependencies
-      run: |
-        corepack enable pnpm
-        pnpm install --frozen-lockfile
+      - name: Install dependencies
+        run: |
+          corepack enable pnpm
+          pnpm install --frozen-lockfile
 
-    - name: Build application
-      run: pnpm run build
+      - name: Build application
+        run: pnpm run build
 
-    - name: Login to Azure Container Registry
-      uses: azure/docker-login@v1
-      with:
-        login-server: ${{ env.CONTAINER_REGISTRY }}.azurecr.io
-        username: ${{ secrets.ACR_USERNAME }}
-        password: ${{ secrets.ACR_PASSWORD }}
+      - name: Login to Azure Container Registry
+        uses: azure/docker-login@v1
+        with:
+          login-server: ${{ env.CONTAINER_REGISTRY }}.azurecr.io
+          username: ${{ secrets.ACR_USERNAME }}
+          password: ${{ secrets.ACR_PASSWORD }}
 
-    - name: Build and push Docker image
-      run: |
-        docker build -t ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} .
-        docker push ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }}
+      - name: Build and push Docker image
+        run: |
+          docker build -t ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} .
+          docker push ${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }}
 
-    - name: Login to Azure
-      uses: azure/login@v1
-      with:
-        creds: ${{ secrets.AZURE_CREDENTIALS }}
+      - name: Login to Azure
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
-    - name: Register Container Apps provider
-      run: |
-        az provider register --namespace Microsoft.App --wait
-        az provider show --namespace Microsoft.App --query "registrationState"
+      - name: Register Container Apps provider
+        run: |
+          az provider register --namespace Microsoft.App --wait
+          az provider show --namespace Microsoft.App --query "registrationState"
 
-    - name: Create Container Apps Environment (if not exists)
-      if: github.ref == 'refs/heads/main'
-      run: |
-        az containerapp env create \
-          --name ${{ env.CONTAINER_APP_ENVIRONMENT }} \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --location 'France Central' \
-          --only-show-errors || echo "Environment already exists"
+      - name: Ensure Log Analytics workspace exists
+        run: |
+          if ! az monitor log-analytics workspace show \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --workspace-name ${{ env.LOG_WORKSPACE_NAME }} >/dev/null 2>&1; then
+            echo "Creating Log Analytics workspace..."
+            az monitor log-analytics workspace create \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --workspace-name ${{ env.LOG_WORKSPACE_NAME }} \
+              --location "${{ env.LOCATION }}"
+          else
+            echo "Log Analytics workspace already exists."
+          fi
 
-    - name: Deploy to Azure Container Apps
-      if: github.ref == 'refs/heads/main'
-      run: |
-        az containerapp create \
-          --name ${{ env.CONTAINER_APP_NAME }} \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --environment ${{ env.CONTAINER_APP_ENVIRONMENT }} \
-          --image crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} \
-          --target-port 3000 \
-          --ingress external \
-          --registry-server crrmdycvagent.azurecr.io \
-          --registry-username ${{ secrets.ACR_USERNAME }} \
-          --registry-password ${{ secrets.ACR_PASSWORD }} \
-          --env-vars \
-            azure_sql_server=${{ secrets.azure_sql_server }} \
-            azure_sql_database=${{ secrets.azure_sql_database }} \
-            azure_sql_user=${{ secrets.azure_sql_user }} \
-            azure_sql_password=${{ secrets.azure_sql_password }} \
-            azure_storage_connection_string=${{ secrets.azure_storage_connection_string }} \
-            next_public_base_url=https://${{ env.CONTAINER_APP_NAME }}.${{ env.CONTAINER_APP_ENVIRONMENT }}.azurecontainerapps.io \
-          --cpu 0.25 \
-          --memory 0.5Gi \
-          --min-replicas 0 \
-          --max-replicas 1 \
-          --only-show-errors || \
-        # Update existing container app
-        az containerapp update \
-          --name ${{ env.CONTAINER_APP_NAME }} \
-          --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
-          --image crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }} \
-          --set-env-vars \
-            azure_sql_server=${{ secrets.azure_sql_server }} \
-            azure_sql_database=${{ secrets.azure_sql_database }} \
-            azure_sql_user=${{ secrets.azure_sql_user }} \
-            azure_sql_password=${{ secrets.azure_sql_password }} \
-            azure_storage_connection_string=${{ secrets.azure_storage_connection_string }} \
-            next_public_base_url=https://${{ env.CONTAINER_APP_NAME }}.${{ env.CONTAINER_APP_ENVIRONMENT }}.azurecontainerapps.io \
-          --cpu 0.25 \
-          --memory 0.5Gi \
-          --min-replicas 0 \
-          --max-replicas 1 \
-          --only-show-errors
+      - name: Create Container Apps Environment (if not exists)
+        if: github.ref == 'refs/heads/main'
+        run: |
+          if ! az containerapp env show \
+            --name ${{ env.CONTAINER_APP_ENVIRONMENT }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
+            echo "Creating Container App Environment..."
+            LOG_WORKSPACE_ID=$(az monitor log-analytics workspace show \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --workspace-name ${{ env.LOG_WORKSPACE_NAME }} \
+              --query customerId -o tsv)
+            LOG_WORKSPACE_KEY=$(az monitor log-analytics workspace get-shared-keys \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --workspace-name ${{ env.LOG_WORKSPACE_NAME }} \
+              --query primarySharedKey -o tsv)
 
-          
+            az containerapp env create \
+              --name ${{ env.CONTAINER_APP_ENVIRONMENT }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --location "${{ env.LOCATION }}" \
+              --logs-workspace-id $LOG_WORKSPACE_ID \
+              --logs-workspace-key $LOG_WORKSPACE_KEY \
+              --only-show-errors
+          else
+            echo "Container App Environment already exists."
+          fi
+
+      - name: Deploy or update Azure Container App
+        if: github.ref == 'refs/heads/main'
+        run: |
+          IMAGE="${{ env.CONTAINER_REGISTRY }}.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }}"
+          echo "Deploying image: $IMAGE"
+
+          # Try to create, update if exists
+          if ! az containerapp show \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} >/dev/null 2>&1; then
+
+            echo "Creating new Container App..."
+            az containerapp create \
+              --name ${{ env.CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --environment ${{ env.CONTAINER_APP_ENVIRONMENT }} \
+              --image $IMAGE \
+              --target-port 3000 \
+              --ingress external \
+              --registry-server ${{ env.CONTAINER_REGISTRY }}.azurecr.io \
+              --registry-username ${{ secrets.ACR_USERNAME }} \
+              --registry-password ${{ secrets.ACR_PASSWORD }} \
+              --env-vars \
+                azure_sql_server=${{ secrets.azure_sql_server }} \
+                azure_sql_database=${{ secrets.azure_sql_database }} \
+                azure_sql_user=${{ secrets.azure_sql_user }} \
+                azure_sql_password=${{ secrets.azure_sql_password }} \
+                azure_storage_connection_string=${{ secrets.azure_storage_connection_string }} \
+                next_public_base_url=https://${{ env.CONTAINER_APP_NAME }}.${{ env.CONTAINER_APP_ENVIRONMENT }}.azurecontainerapps.io \
+              --resources-cpu 0.25 \
+              --resources-memory 0.5Gi \
+              --scale-min-replicas 0 \
+              --scale-max-replicas 1 \
+              --only-show-errors
+          else
+            echo "Updating existing Container App..."
+            az containerapp update \
+              --name ${{ env.CONTAINER_APP_NAME }} \
+              --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+              --image $IMAGE \
+              --set-env-vars \
+                azure_sql_server=${{ secrets.azure_sql_server }} \
+                azure_sql_database=${{ secrets.azure_sql_database }} \
+                azure_sql_user=${{ secrets.azure_sql_user }} \
+                azure_sql_password=${{ secrets.azure_sql_password }} \
+                azure_storage_connection_string=${{ secrets.azure_storage_connection_string }} \
+                next_public_base_url=https://${{ env.CONTAINER_APP_NAME }}.${{ env.CONTAINER_APP_ENVIRONMENT }}.azurecontainerapps.io \
+              --resources-cpu 0.25 \
+              --resources-memory 0.5Gi \
+              --scale-min-replicas 0 \
+              --scale-max-replicas 1 \
+              --only-show-errors
+          fi
