@@ -2,6 +2,13 @@
 
 # dependencies
 /node_modules
+/azure/node_modules
+/azure/dist
+/azure/build
+/azure/out
+/azure/.next
+/azure/.vercel
+/azure/.env
 /.pnp
 .pnp.*
 .yarn/*

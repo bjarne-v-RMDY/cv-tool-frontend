@@ -1,0 +1,25 @@
+{
+  "name": "cvtool-functions",
+  "version": "1.0.0",
+  "description": "Azure Functions for CV Tool",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "tsc -w",
+    "prestart": "npm run build",
+    "start": "func start",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.0.0",
+    "@azure/storage-blob": "^12.17.0",
+    "@azure/storage-queue": "^12.15.0",
+    "mssql": "^10.0.1"
+  },
+  "devDependencies": {
+    "@types/mssql": "^9.1.1",
+    "@types/node": "^20.x",
+    "typescript": "^5.0.0",
+    "azure-functions-core-tools": "^4.x"
+  }
+}

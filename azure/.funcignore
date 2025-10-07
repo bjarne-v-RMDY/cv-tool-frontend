@@ -1,0 +1,9 @@
+.git*
+.vscode
+local.settings.json
+test
+.env
+*.md
+src
+tsconfig.json
+deploy.sh
