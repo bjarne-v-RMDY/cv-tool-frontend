@@ -9,7 +9,7 @@ on:
 env:
   AZURE_WEBAPP_NAME: cvtool-ui
   AZURE_RESOURCE_GROUP: az-rg-rmdy-cv-agent
-  CONTAINER_REGISTRY: crrmdycvagent
+  CONTAINER_REGISTRY: crRmdyCvAgent
   CONTAINER_APP_ENVIRONMENT: cvtool-env
   CONTAINER_APP_NAME: cvtool-app
   LOG_WORKSPACE_NAME: cvtool-logs
