@@ -104,6 +104,12 @@ jobs:
         run: |
           IMAGE="crrmdycvagent.azurecr.io/${{ env.AZURE_WEBAPP_NAME }}:${{ github.sha }}"
           echo "Deploying image: $IMAGE"
+          
+          # Get the actual Container App URL after deployment
+          APP_URL=$(az containerapp show \
+            --name ${{ env.CONTAINER_APP_NAME }} \
+            --resource-group ${{ env.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" -o tsv 2>/dev/null || echo "")
 
           # Check if Container App exists
           if az containerapp show \
@@ -118,7 +124,7 @@ jobs:
               --memory 0.5Gi \
               --min-replicas 0 \
               --max-replicas 1 \
-              --set-env-vars "azure_sql_server=${{ secrets.azure_sql_server }}" "azure_sql_database=${{ secrets.azure_sql_database }}" "azure_sql_user=${{ secrets.azure_sql_user }}" "azure_sql_password=${{ secrets.azure_sql_password }}" "azure_storage_connection_string=${{ secrets.azure_storage_connection_string }}" "next_public_base_url=https://${{ env.CONTAINER_APP_NAME }}.${{ env.CONTAINER_APP_ENVIRONMENT }}.azurecontainerapps.io" \
+              --set-env-vars "azure_sql_server=${{ secrets.azure_sql_server }}" "azure_sql_database=${{ secrets.azure_sql_database }}" "azure_sql_user=${{ secrets.azure_sql_user }}" "azure_sql_password=${{ secrets.azure_sql_password }}" "azure_storage_connection_string=${{ secrets.azure_storage_connection_string }}" "next_public_base_url=https://${APP_URL}" \
               --only-show-errors
           else
             echo "Creating new Container App..."
@@ -136,6 +142,6 @@ jobs:
               --memory 0.5Gi \
               --min-replicas 0 \
               --max-replicas 1 \
-              --env-vars "azure_sql_server=${{ secrets.azure_sql_server }}" "azure_sql_database=${{ secrets.azure_sql_database }}" "azure_sql_user=${{ secrets.azure_sql_user }}" "azure_sql_password=${{ secrets.azure_sql_password }}" "azure_storage_connection_string=${{ secrets.azure_storage_connection_string }}" "next_public_base_url=https://${{ env.CONTAINER_APP_NAME }}.${{ env.CONTAINER_APP_ENVIRONMENT }}.azurecontainerapps.io" \
+              --env-vars "azure_sql_server=${{ secrets.azure_sql_server }}" "azure_sql_database=${{ secrets.azure_sql_database }}" "azure_sql_user=${{ secrets.azure_sql_user }}" "azure_sql_password=${{ secrets.azure_sql_password }}" "azure_storage_connection_string=${{ secrets.azure_storage_connection_string }}" "next_public_base_url=https://cvtool-app.whitedune-f582cade.francecentral.azurecontainerapps.io" \
               --only-show-errors
           fi
