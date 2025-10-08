@@ -11,15 +11,18 @@
     "test": "echo \"No tests yet\" && exit 0"
   },
   "dependencies": {
+    "@ai-sdk/azure": "^2.0.45",
     "@azure/functions": "^4.0.0",
     "@azure/storage-blob": "^12.17.0",
     "@azure/storage-queue": "^12.15.0",
-    "mssql": "^10.0.1"
+    "ai": "^5.0.60",
+    "mssql": "^10.0.1",
+    "pdf-parse": "^1.1.1"
   },
   "devDependencies": {
     "@types/mssql": "^9.1.1",
     "@types/node": "^20.x",
-    "typescript": "^5.0.0",
-    "azure-functions-core-tools": "^4.x"
+    "azure-functions-core-tools": "^4.x",
+    "typescript": "^5.0.0"
   }
 }

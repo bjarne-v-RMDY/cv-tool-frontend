@@ -27,6 +27,10 @@ const data = {
           title: "CVs",
           url: "/dashboard/cvs",
         },
+        {
+          title: "People",
+          url: "/dashboard/people",
+        },
       ],
     },
     ...(process.env.NODE_ENV === 'development' ? [{
