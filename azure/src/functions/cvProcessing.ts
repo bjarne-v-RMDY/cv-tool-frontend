@@ -1,6 +1,7 @@
 import { app, InvocationContext } from '@azure/functions';
 import * as sql from 'mssql';
 import { BlobServiceClient } from '@azure/storage-blob';
+import { QueueServiceClient } from '@azure/storage-queue';
 import { createAzure } from '@ai-sdk/azure';
 import { generateText } from 'ai';
 
@@ -308,6 +309,32 @@ app.storageQueue('cvProcessing', {
 
                         await pool.close();
                         context.log(`✅ Successfully saved CV analysis to database for user ID: ${userId}`);
+
+                        // Queue for AI Search indexing
+                        try {
+                            const storageConnectionString = process.env.azure_storage_connection_string || process.env.AzureWebJobsStorage;
+                            if (!storageConnectionString) {
+                                throw new Error('Azure Storage Connection String not found in environment variables.');
+                            }
+                            const queueServiceClient = QueueServiceClient.fromConnectionString(storageConnectionString);
+
+                            const indexingQueueClient = queueServiceClient.getQueueClient('cv-indexing-queue');
+                            await indexingQueueClient.createIfNotExists();
+                            await indexingQueueClient.sendMessage(Buffer.from(JSON.stringify({ userId })).toString('base64'));
+                            context.log(`📊 Queued user ${userId} for AI Search indexing`);
+
+                            await addActivityLog(
+                                'indexing',
+                                'Queued for Indexing',
+                                `Candidate data queued for AI search indexing`,
+                                'in_progress',
+                                { userId }
+                            );
+                        } catch (queueError) {
+                            context.error('Failed to queue for indexing:', queueError);
+                            // Don't fail the whole process if indexing queue fails
+                        }
+
                     } catch (dbError) {
                         context.error('❌ Error saving CV analysis to database:', dbError);
                         // Re-throw to see full error

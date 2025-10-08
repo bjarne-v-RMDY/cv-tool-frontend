@@ -27,7 +27,7 @@ function getQueueServiceClient() {
 
 // File validation
 const ALLOWED_FILE_TYPES = ['application/pdf', 'text/plain']
-const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
+const MAX_FILE_SIZE = 100 * 1024 * 1024 // 100MB
 
 function validateFile(file: File): { valid: boolean; error?: string } {
   // Check file type

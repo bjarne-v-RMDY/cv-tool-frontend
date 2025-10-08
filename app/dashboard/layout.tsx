@@ -5,7 +5,7 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { ChatToggle } from "@/components/chat-toggle"
 import { ChatPanel } from "@/components/chat-panel"
-import { useChatStore } from "@/hooks/use-chat-store"
+import { useSidebarChatStore } from "@/lib/sidebar-chat-store"
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -68,7 +68,14 @@ export default function DashboardLayout({
 }) {
     const pathname = usePathname()
     const breadcrumbs = generateBreadcrumbs(pathname)
-    const { isOpen: isChatOpen, toggle: toggleChat, close: closeChat } = useChatStore()
+    const { isOpen: isChatOpen, toggle: toggleChat, setOpen: setChatOpen } = useSidebarChatStore()
+
+    // Close sidebar chat when on the chat page
+    React.useEffect(() => {
+        if (pathname === '/dashboard/chat') {
+            setChatOpen(false)
+        }
+    }, [pathname, setChatOpen])
 
     return (
         <SidebarProvider>
@@ -99,7 +106,9 @@ export default function DashboardLayout({
                         </BreadcrumbList>
                     </Breadcrumb>
                     <div className="ml-auto flex items-center gap-2">
-                        <ChatToggle isOpen={isChatOpen} onToggle={toggleChat} />
+                        {pathname !== '/dashboard/chat' && (
+                            <ChatToggle isOpen={isChatOpen} onToggle={toggleChat} />
+                        )}
                         <ThemeToggle />
                     </div>
                 </header>
@@ -107,7 +116,7 @@ export default function DashboardLayout({
                     <div className={`flex-1 flex flex-col transition-all duration-300 ${isChatOpen ? 'mr-0' : 'mr-0'}`}>
                         {children}
                     </div>
-                    <ChatPanel isOpen={isChatOpen} onClose={closeChat} />
+                    <ChatPanel isOpen={isChatOpen} onClose={() => setChatOpen(false)} />
                 </div>
             </SidebarInset>
         </SidebarProvider>
