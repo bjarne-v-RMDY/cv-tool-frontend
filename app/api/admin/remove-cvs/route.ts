@@ -3,6 +3,10 @@ import { executeQuery, executeNonQuery } from '@/lib/database'
 import { BlobServiceClient } from '@azure/storage-blob'
 import { SearchClient, AzureKeyCredential } from '@azure/search-documents'
 
+interface SearchDocument {
+  userId: string
+}
+
 // Helper function to get BlobServiceClient
 function getBlobServiceClient() {
   const connectionString = process.env.azure_storage_connection_string
@@ -24,7 +28,7 @@ async function clearSearchIndex() {
   }
 
   try {
-    const searchClient = new SearchClient(
+    const searchClient = new SearchClient<SearchDocument>(
       searchEndpoint,
       indexName,
       new AzureKeyCredential(searchKey)
@@ -36,9 +40,11 @@ async function clearSearchIndex() {
       top: 1000, // Adjust if you have more than 1000 candidates
     })
 
-    const documentsToDelete = []
+    const documentsToDelete: { userId: string }[] = []
     for await (const result of searchResults.results) {
-      documentsToDelete.push({ userId: (result.document as any).userId })
+      if (result.document?.userId) {
+        documentsToDelete.push({ userId: result.document.userId })
+      }
     }
 
     if (documentsToDelete.length > 0) {
