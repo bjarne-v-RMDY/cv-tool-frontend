@@ -3,12 +3,13 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Trash2, Database, FileX, AlertTriangle } from 'lucide-react'
+import { Trash2, Database, FileX, AlertTriangle, Users } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function AdminPage() {
     const [isClearing, setIsClearing] = useState(false)
     const [isRemoving, setIsRemoving] = useState(false)
+    const [isClearingPeople, setIsClearingPeople] = useState(false)
 
     const handleClearLogs = async () => {
         if (!confirm('Are you sure you want to clear ALL activity logs? This action cannot be undone.')) {
@@ -60,6 +61,31 @@ export default function AdminPage() {
         }
     }
 
+    const handleClearPeople = async () => {
+        if (!confirm('Are you sure you want to clear ALL people data? This will delete all users, projects, technologies, and CV files from the database. This action cannot be undone.')) {
+            return
+        }
+
+        setIsClearingPeople(true)
+        try {
+            const response = await fetch('/api/admin/clear-people', {
+                method: 'DELETE',
+            })
+
+            if (response.ok) {
+                const result = await response.json()
+                toast.success(result.message)
+            } else {
+                throw new Error('Failed to clear people')
+            }
+        } catch (error) {
+            console.error('Error clearing people:', error)
+            toast.error('Failed to clear people data')
+        } finally {
+            setIsClearingPeople(false)
+        }
+    }
+
     return (
         <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
             <div className="flex items-center justify-between space-y-2">
@@ -70,7 +96,7 @@ export default function AdminPage() {
                 </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {/* Clear Activity Logs */}
                 <Card>
                     <CardHeader>
@@ -115,6 +141,30 @@ export default function AdminPage() {
                         >
                             <Trash2 className="mr-2 h-4 w-4" />
                             {isRemoving ? 'Removing CVs...' : 'Remove All CVs'}
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                {/* Clear People Data */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Users className="h-5 w-5" />
+                            Clear People Data
+                        </CardTitle>
+                        <CardDescription>
+                            Delete all users, projects, technologies, and CV files from the database. Keeps files in storage.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button
+                            onClick={handleClearPeople}
+                            disabled={isClearingPeople}
+                            variant="destructive"
+                            className="w-full"
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {isClearingPeople ? 'Clearing People...' : 'Clear All People'}
                         </Button>
                     </CardContent>
                 </Card>
