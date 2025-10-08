@@ -37,13 +37,13 @@
 - [X] **Response Handling** - Return upload confirmation
 
 ### 2.2 CV Processing Pipeline
-- [ ] **Azure Function** - Triggered by queue messages
-- [ ] **CV Parser Service** - Extract text from PDFs/DOCs
-- [ ] **AI Text Analysis** - Parse structured data (title, period, role, technologies)
-- [ ] **Data Validation** - Ensure data quality
-- [ ] **Database Integration** - Store parsed data
+- [X] **Azure Function** - Triggered by queue messages
+- [X] **CV Parser Service** - Extract text from PDFs/DOCs
+- [X] **AI Text Analysis** - Parse structured data (title, period, role, technologies)
+- [X] **Data Validation** - Ensure data quality
+- [X] **Database Integration** - Store parsed data
 - [ ] **Duplicate Detection** - Check for existing projects
-- [ ] **Error Handling** - Log parsing failures
+- [X] **Error Handling** - Log parsing failures
 
 ### 2.3 Data Structure Implementation
 - [ ] **Project Entity** - Title, period, role, technologies, company
