@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { executeQuery, executeNonQuery } from '@/lib/database'
 import { BlobServiceClient } from '@azure/storage-blob'
+import { SearchClient, AzureKeyCredential } from '@azure/search-documents'
 
 // Helper function to get BlobServiceClient
 function getBlobServiceClient() {
@@ -9,6 +10,49 @@ function getBlobServiceClient() {
     throw new Error('Azure Storage connection string is not configured')
   }
   return BlobServiceClient.fromConnectionString(connectionString)
+}
+
+// Helper function to clear Azure AI Search index
+async function clearSearchIndex() {
+  const searchEndpoint = process.env.azure_search_endpoint
+  const searchKey = process.env.azure_search_key
+  const indexName = 'cv-candidates'
+
+  if (!searchEndpoint || !searchKey) {
+    console.warn('Azure Search not configured, skipping index clearing')
+    return 0
+  }
+
+  try {
+    const searchClient = new SearchClient(
+      searchEndpoint,
+      indexName,
+      new AzureKeyCredential(searchKey)
+    )
+
+    // Get all documents in the index
+    const searchResults = await searchClient.search('*', {
+      select: ['userId'],
+      top: 1000, // Adjust if you have more than 1000 candidates
+    })
+
+    const documentsToDelete = []
+    for await (const result of searchResults.results) {
+      documentsToDelete.push({ userId: (result.document as any).userId })
+    }
+
+    if (documentsToDelete.length > 0) {
+      // Delete all documents from the index
+      await searchClient.deleteDocuments(documentsToDelete)
+      console.log(`Deleted ${documentsToDelete.length} documents from search index`)
+      return documentsToDelete.length
+    }
+
+    return 0
+  } catch (error) {
+    console.error('Error clearing search index:', error)
+    throw error
+  }
 }
 
 export async function DELETE() {
@@ -24,6 +68,7 @@ export async function DELETE() {
     const CONTAINER_NAME = 'cv-files'
     let deletedFiles = 0
     let deletedRecords = 0
+    let deletedIndexDocuments = 0
 
     // Get all CV files from storage
     try {
@@ -69,11 +114,20 @@ export async function DELETE() {
       console.error('Error clearing database records:', dbError)
     }
 
+    // Clear Azure AI Search index
+    try {
+      deletedIndexDocuments = await clearSearchIndex()
+    } catch (searchError) {
+      console.error('Error clearing search index:', searchError)
+      // Continue even if search index clearing fails
+    }
+
     return NextResponse.json({
       success: true,
       deletedFiles,
       deletedRecords,
-      message: `Removed ${deletedFiles} files from storage and ${deletedRecords} database records`
+      deletedIndexDocuments,
+      message: `Removed ${deletedFiles} files from storage, ${deletedRecords} database records, and ${deletedIndexDocuments} search index documents`
     })
   } catch (error) {
     console.error('Error removing CVs:', error)

@@ -42,6 +42,7 @@ export async function POST() {
       success: true,
       count: users.length,
       message: `Queued ${users.length} candidates for re-indexing`,
+      clearChat: true, // Signal to client to clear chat history
     });
   } catch (error) {
     console.error('Error queueing for reindex:', error);

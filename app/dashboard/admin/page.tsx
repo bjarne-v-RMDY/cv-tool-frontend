@@ -3,14 +3,17 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Trash2, Database, FileX, AlertTriangle, Users, RefreshCw } from 'lucide-react'
+import { Trash2, Database, FileX, AlertTriangle, Users, RefreshCw, MessageCircle } from 'lucide-react'
 import { toast } from 'sonner'
+import { useChatStore } from '@/lib/chat-store'
 
 export default function AdminPage() {
     const [isClearing, setIsClearing] = useState(false)
     const [isRemoving, setIsRemoving] = useState(false)
     const [isClearingPeople, setIsClearingPeople] = useState(false)
     const [isReindexing, setIsReindexing] = useState(false)
+    const [isClearingChat, setIsClearingChat] = useState(false)
+    const { clearChat } = useChatStore()
 
     const handleClearLogs = async () => {
         if (!confirm('Are you sure you want to clear ALL activity logs? This action cannot be undone.')) {
@@ -50,7 +53,7 @@ export default function AdminPage() {
 
             if (response.ok) {
                 const result = await response.json()
-                toast.success(`Removed ${result.deletedFiles} CV files and ${result.deletedRecords} database records`)
+                toast.success(`Removed ${result.deletedFiles} CV files, ${result.deletedRecords} database records, and ${result.deletedIndexDocuments || 0} search index documents`)
             } else {
                 throw new Error('Failed to remove CVs')
             }
@@ -75,7 +78,7 @@ export default function AdminPage() {
 
             if (response.ok) {
                 const result = await response.json()
-                toast.success(result.message)
+                toast.success(`${result.message} (${result.deletedIndexDocuments || 0} search index documents cleared)`)
             } else {
                 throw new Error('Failed to clear people')
             }
@@ -84,6 +87,32 @@ export default function AdminPage() {
             toast.error('Failed to clear people data')
         } finally {
             setIsClearingPeople(false)
+        }
+    }
+
+    const handleClearChat = async () => {
+        if (!confirm('Are you sure you want to clear the chat history? This will remove all conversation data.')) {
+            return
+        }
+
+        setIsClearingChat(true)
+        try {
+            // Call the API endpoint (though it just returns success since chat is client-side)
+            const response = await fetch('/api/admin/clear-chat', {
+                method: 'POST',
+            })
+
+            if (response.ok) {
+                clearChat()
+                toast.success('Chat history cleared successfully')
+            } else {
+                throw new Error('Failed to clear chat history')
+            }
+        } catch (error) {
+            console.error('Error clearing chat:', error)
+            toast.error('Failed to clear chat history')
+        } finally {
+            setIsClearingChat(false)
         }
     }
 
@@ -101,6 +130,12 @@ export default function AdminPage() {
             if (response.ok) {
                 const result = await response.json()
                 toast.success(`Queued ${result.count} candidates for re-indexing`)
+
+                // Clear chat history if the API indicates to do so
+                if (result.clearChat) {
+                    clearChat()
+                    toast.success('Chat history cleared')
+                }
             } else {
                 throw new Error('Failed to start re-indexing')
             }
@@ -155,7 +190,7 @@ export default function AdminPage() {
                             Remove All CVs
                         </CardTitle>
                         <CardDescription>
-                            Delete all CV files from Azure Storage and remove all related database records.
+                            Delete all CV files from Azure Storage, remove all related database records, and clear the search index.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -179,7 +214,7 @@ export default function AdminPage() {
                             Clear People Data
                         </CardTitle>
                         <CardDescription>
-                            Delete all users, projects, technologies, and CV files from the database. Keeps files in storage.
+                            Delete all users, projects, technologies, and CV files from the database and clear the search index. Keeps files in storage.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>
@@ -195,6 +230,30 @@ export default function AdminPage() {
                     </CardContent>
                 </Card>
 
+                {/* Clear Chat History */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <MessageCircle className="h-5 w-5" />
+                            Clear Chat History
+                        </CardTitle>
+                        <CardDescription>
+                            Clear all chat conversation history. This removes all stored messages from the AI chat interface.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button
+                            onClick={handleClearChat}
+                            disabled={isClearingChat}
+                            variant="destructive"
+                            className="w-full"
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {isClearingChat ? 'Clearing Chat...' : 'Clear Chat History'}
+                        </Button>
+                    </CardContent>
+                </Card>
+
                 {/* Re-index AI Search */}
                 <Card>
                     <CardHeader>
@@ -203,7 +262,7 @@ export default function AdminPage() {
                             Re-index AI Search
                         </CardTitle>
                         <CardDescription>
-                            Queue all candidates for re-indexing in Azure AI Search. Updates search index with latest data.
+                            Queue all candidates for re-indexing in Azure AI Search. Updates search index with latest data and clears chat history.
                         </CardDescription>
                     </CardHeader>
                     <CardContent>

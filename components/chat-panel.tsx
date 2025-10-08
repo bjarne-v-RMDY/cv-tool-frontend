@@ -3,30 +3,40 @@
 import * as React from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Send, X } from "lucide-react"
+import { Send, X, Trash2 } from "lucide-react"
+import { useChatStore, type Message } from "@/lib/chat-store"
 
 interface ChatPanelProps {
     isOpen: boolean
     onClose: () => void
+    isFullWidth?: boolean
+    showCloseButton?: boolean
+    showHeader?: boolean
 }
 
-interface Message {
-    id: string
-    role: 'user' | 'assistant'
-    content: string
-}
-
-export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
+export function ChatPanel({
+    isOpen,
+    onClose,
+    isFullWidth = false,
+    showCloseButton = true,
+    showHeader = true
+}: ChatPanelProps) {
     const [inputValue, setInputValue] = React.useState("")
-    const [messages, setMessages] = React.useState<Message[]>([
-        {
-            id: '1',
-            role: 'assistant',
-            content: 'Hello! I\'m your AI assistant for candidate search. I can help you find developers by skills, experience, location, or answer questions about specific candidates. Try asking me: "Find React developers with 5+ years experience" or "Who has experience with Azure?"',
-        }
-    ])
-    const [isLoading, setIsLoading] = React.useState(false)
-    const [error, setError] = React.useState<string | null>(null)
+
+    const {
+        messages,
+        isLoading,
+        error,
+        setMessages,
+        addMessage,
+        setLoading,
+        setError,
+        clearChat
+    } = useChatStore()
+
+    const handleClearChat = () => {
+        clearChat()
+    }
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -39,9 +49,9 @@ export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
         }
 
         // Add user message immediately
-        setMessages(prev => [...prev, userMessage])
+        addMessage(userMessage)
         setInputValue("")
-        setIsLoading(true)
+        setLoading(true)
         setError(null)
 
         try {
@@ -76,7 +86,7 @@ export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
                 content: ''
             }
 
-            setMessages(prev => [...prev, assistantMessage])
+            addMessage(assistantMessage)
 
             let accumulatedContent = ''
 
@@ -88,20 +98,18 @@ export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
                 accumulatedContent += chunk
 
                 // Update the assistant message with accumulated content
-                setMessages(prev =>
-                    prev.map(msg =>
-                        msg.id === assistantMessage.id
-                            ? { ...msg, content: accumulatedContent }
-                            : msg
-                    )
-                )
+                setMessages(useChatStore.getState().messages.map(msg =>
+                    msg.id === assistantMessage.id
+                        ? { ...msg, content: accumulatedContent }
+                        : msg
+                ))
             }
 
         } catch (err) {
             console.error('Chat error:', err)
             setError(err instanceof Error ? err.message : 'An error occurred')
         } finally {
-            setIsLoading(false)
+            setLoading(false)
         }
     }
 
@@ -118,23 +126,42 @@ export function ChatPanel({ isOpen, onClose }: ChatPanelProps) {
     if (!isOpen) return null
 
     return (
-        <div className="h-full w-96 bg-background border-l shadow-lg flex flex-col">
+        <div className={`h-full bg-background flex flex-col ${isFullWidth
+            ? 'w-full'
+            : 'w-96 border-l shadow-lg'
+            }`}>
             {/* Header */}
-            <div className="flex items-center justify-between p-4 border-b">
-                <div>
-                    <h2 className="text-lg font-semibold">AI Candidate Search</h2>
-                    <p className="text-xs text-muted-foreground">Ask about candidates & skills</p>
+            {showHeader && (
+                <div className="flex items-center justify-between p-4 border-b">
+                    <div>
+                        <h2 className="text-lg font-semibold">AI Candidate Search</h2>
+                        <p className="text-xs text-muted-foreground">Ask about candidates & skills</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={handleClearChat}
+                            className="h-8 w-8"
+                            title="Clear chat history"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            <span className="sr-only">Clear chat history</span>
+                        </Button>
+                        {showCloseButton && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={onClose}
+                                className="h-8 w-8"
+                            >
+                                <X className="h-4 w-4" />
+                                <span className="sr-only">Close chat</span>
+                            </Button>
+                        )}
+                    </div>
                 </div>
-                <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={onClose}
-                    className="h-8 w-8"
-                >
-                    <X className="h-4 w-4" />
-                    <span className="sr-only">Close chat</span>
-                </Button>
-            </div>
+            )}
 
             {/* Messages */}
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
