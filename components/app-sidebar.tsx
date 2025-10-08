@@ -29,6 +29,16 @@ const data = {
         },
       ],
     },
+    ...(process.env.NODE_ENV === 'development' ? [{
+      title: "Admin",
+      url: "#",
+      items: [
+        {
+          title: "Admin Panel",
+          url: "/dashboard/admin",
+        },
+      ],
+    }] : []),
   ],
 }
 

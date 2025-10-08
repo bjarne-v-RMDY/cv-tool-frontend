@@ -14,13 +14,11 @@ npm run build
 echo "📦 Creating deployment package..."
 rm -f deploy.zip
 zip -r deploy.zip \
-  dist \
+  dist/ \
   host.json \
   package.json \
   package-lock.json \
-  -x "node_modules/*" \
-  -x "*.md" \
-  -x "src/*"
+  -x "*.md" "src/*" "tsconfig.json" "README.md" "local.settings.json"
 
 echo "✅ Package created: deploy.zip"
 

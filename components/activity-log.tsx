@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import { Activity, Upload, Users, CheckCircle, Clock, AlertCircle } from "lucide-react"
+import { Activity, Upload, Users, CheckCircle, Clock, AlertCircle, RefreshCw } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 
 interface ActivityItem {
     id: number
@@ -27,20 +28,22 @@ interface PaginationInfo {
     hasPrev: boolean
 }
 
-const getActivityIcon = (type: ActivityItem['type']) => {
+const getActivityIcon = (type: ActivityItem['type'], status: ActivityItem['status']) => {
+    const iconClass = `h-4 w-4 ${getStatusIconColor(status)}`
+
     switch (type) {
         case 'upload':
-            return <Upload className="h-4 w-4" />
+            return <Upload className={iconClass} />
         case 'processing':
-            return <Clock className="h-4 w-4" />
+            return <Clock className={iconClass} />
         case 'completed':
-            return <CheckCircle className="h-4 w-4" />
+            return <CheckCircle className={iconClass} />
         case 'error':
-            return <AlertCircle className="h-4 w-4" />
+            return <AlertCircle className={iconClass} />
         case 'matching':
-            return <Users className="h-4 w-4" />
+            return <Users className={iconClass} />
         default:
-            return <Activity className="h-4 w-4" />
+            return <Activity className={iconClass} />
     }
 }
 
@@ -56,6 +59,21 @@ const getStatusColor = (status: ActivityItem['status']) => {
             return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
         default:
             return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
+    }
+}
+
+const getStatusIconColor = (status: ActivityItem['status']) => {
+    switch (status) {
+        case 'completed':
+            return 'text-green-600 dark:text-green-400'
+        case 'processing':
+            return 'text-blue-600 dark:text-blue-400'
+        case 'failed':
+            return 'text-red-600 dark:text-red-400'
+        case 'pending':
+            return 'text-yellow-600 dark:text-yellow-400'
+        default:
+            return 'text-gray-600 dark:text-gray-400'
     }
 }
 
@@ -76,14 +94,21 @@ export function ActivityLog() {
     const [activities, setActivities] = React.useState<ActivityItem[]>([])
     const [isLoading, setIsLoading] = React.useState(true)
     const [isLoadingMore, setIsLoadingMore] = React.useState(false)
+    const [isRefreshing, setIsRefreshing] = React.useState(false)
     const [pagination, setPagination] = React.useState<PaginationInfo | null>(null)
     const [currentPage, setCurrentPage] = React.useState(1)
+    const [countdown, setCountdown] = React.useState(60)
 
     // Fetch activities from API with pagination
-    const fetchActivities = React.useCallback(async (page: number = 1, append: boolean = false) => {
+    const fetchActivities = React.useCallback(async (page: number = 1, append: boolean = false, isManualRefresh: boolean = false) => {
         try {
-            if (!append) setIsLoading(true)
-            else setIsLoadingMore(true)
+            if (isManualRefresh) {
+                setIsRefreshing(true)
+            } else if (!append) {
+                setIsLoading(true)
+            } else {
+                setIsLoadingMore(true)
+            }
 
             const response = await fetch(`/api/activity-log?page=${page}&limit=10`)
             if (response.ok) {
@@ -129,6 +154,7 @@ export function ActivityLog() {
         } finally {
             setIsLoading(false)
             setIsLoadingMore(false)
+            setIsRefreshing(false)
         }
     }, [])
 
@@ -139,6 +165,12 @@ export function ActivityLog() {
         }
     }, [pagination, currentPage, isLoadingMore, fetchActivities])
 
+    // Manual refresh function
+    const handleManualRefresh = React.useCallback(() => {
+        setCountdown(60) // Reset countdown
+        fetchActivities(1, false, true)
+    }, [fetchActivities])
+
     // Initial fetch and periodic updates for latest activities
     React.useEffect(() => {
         fetchActivities(1, false)
@@ -146,10 +178,25 @@ export function ActivityLog() {
         const interval = setInterval(() => {
             // Only refresh the first page to get latest activities
             fetchActivities(1, false)
+            setCountdown(60) // Reset countdown after auto-refresh
         }, 60000) // Update every min
 
         return () => clearInterval(interval)
     }, [fetchActivities])
+
+    // Countdown timer
+    React.useEffect(() => {
+        const timer = setInterval(() => {
+            setCountdown(prev => {
+                if (prev <= 1) {
+                    return 60 // Reset to 60 when it reaches 0
+                }
+                return prev - 1
+            })
+        }, 1000)
+
+        return () => clearInterval(timer)
+    }, [])
 
     // Infinite scroll handler
     const scrollContainerRef = React.useRef<HTMLDivElement>(null)
@@ -174,15 +221,32 @@ export function ActivityLog() {
     return (
         <Card className="h-full flex flex-col">
             <CardHeader className="pb-3 flex-shrink-0">
-                <CardTitle className="flex items-center gap-2">
-                    <Activity className="h-5 w-5" />
-                    Activity Log
-                    {pagination && (
-                        <Badge variant="secondary" className="ml-auto">
-                            {pagination.total} total
-                        </Badge>
-                    )}
-                </CardTitle>
+                <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2">
+                        <Activity className="h-5 w-5" />
+                        Activity Log
+                        {pagination && (
+                            <Badge variant="secondary">
+                                {pagination.total} total
+                            </Badge>
+                        )}
+                    </CardTitle>
+                    <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            <span>{countdown}s</span>
+                        </div>
+                        <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={handleManualRefresh}
+                            disabled={isRefreshing}
+                            className="h-8 w-8 p-0"
+                        >
+                            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                        </Button>
+                    </div>
+                </div>
             </CardHeader>
             <CardContent className="pt-0 flex-1 overflow-hidden">
                 <div ref={scrollContainerRef} className="space-y-4 h-full overflow-y-auto">
@@ -196,7 +260,7 @@ export function ActivityLog() {
                             {activities.map((activity) => (
                                 <div key={activity.id} className="flex items-start gap-3 p-3 rounded-lg hover:bg-muted/50 transition-colors">
                                     <div className="flex-shrink-0 mt-0.5">
-                                        {getActivityIcon(activity.type)}
+                                        {getActivityIcon(activity.type, activity.status)}
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center justify-between gap-2">

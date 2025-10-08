@@ -9,6 +9,9 @@
 /azure/.next
 /azure/.vercel
 /azure/.env
+/azure/.secrets
+/azure/deploy.zip
+/azure/local.settings.json
 /.pnp
 .pnp.*
 .yarn/*

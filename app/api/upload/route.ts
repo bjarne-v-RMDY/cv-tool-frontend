@@ -105,48 +105,7 @@ export async function POST(request: NextRequest) {
           etag: uploadResponse.etag
         })
 
-        // Add message to processing queue
-        try {
-          const queueServiceClient = getQueueServiceClient()
-          const queueClient = queueServiceClient.getQueueClient(QUEUE_NAME)
-          
-          const queueMessage = {
-            fileName: file.name,
-            uniqueFileName,
-            blobUrl: blockBlobClient.url,
-            fileSize: file.size,
-            fileType: file.type,
-            uploadedAt: new Date().toISOString(),
-            messageId: uuidv4()
-          }
-
-          await queueClient.sendMessage(Buffer.from(JSON.stringify(queueMessage)).toString('base64'))
-          console.log(`Added to queue: ${file.name}`)
-
-          // Log queue operation to activity log
-          await fetch(`${process.env.next_public_base_url || 'http://localhost:3000'}/api/activity-log`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              type: 'processing',
-              title: 'CV Queued for Processing',
-              description: `${file.name} added to processing queue`,
-              status: 'pending',
-              fileName: file.name,
-              metadata: {
-                queueName: QUEUE_NAME,
-                messageId: queueMessage.messageId
-              }
-            })
-          })
-        } catch (queueError) {
-          console.error('Failed to add to queue:', queueError)
-          // Continue even if queue fails - file is still uploaded
-        }
-
-        // Add to activity log
+        // First: Log upload completion to activity log
         try {
           await fetch(`${process.env.next_public_base_url || 'http://localhost:3000'}/api/activity-log`, {
             method: 'POST',
@@ -168,7 +127,48 @@ export async function POST(request: NextRequest) {
             })
           })
         } catch (logError) {
-          console.error('Failed to log activity:', logError)
+          console.error('Failed to log upload activity:', logError)
+        }
+
+        // Second: Add message to processing queue
+        try {
+          const queueServiceClient = getQueueServiceClient()
+          const queueClient = queueServiceClient.getQueueClient(QUEUE_NAME)
+          
+          const queueMessage = {
+            fileName: file.name,
+            uniqueFileName,
+            blobUrl: blockBlobClient.url,
+            fileSize: file.size,
+            fileType: file.type,
+            uploadedAt: new Date().toISOString(),
+            messageId: uuidv4()
+          }
+
+          await queueClient.sendMessage(Buffer.from(JSON.stringify(queueMessage)).toString('base64'))
+          console.log(`Added to queue: ${file.name}`)
+
+          // Third: Log queue operation to activity log
+          await fetch(`${process.env.next_public_base_url || 'http://localhost:3000'}/api/activity-log`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              type: 'processing',
+              title: 'CV Queued for Processing',
+              description: `${file.name} added to processing queue`,
+              status: 'pending',
+              fileName: file.name,
+              metadata: {
+                queueName: QUEUE_NAME,
+                messageId: queueMessage.messageId
+              }
+            })
+          })
+        } catch (queueError) {
+          console.error('Failed to add to queue:', queueError)
+          // Continue even if queue fails - file is still uploaded
         }
 
       } catch (uploadError) {
