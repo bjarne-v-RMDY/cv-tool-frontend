@@ -21,7 +21,7 @@ export async function DELETE() {
 
     return NextResponse.json({
       success: true,
-      deletedCount: countResult.recordset?.[0]?.total || 0,
+      deletedCount: countResult || 0, // Fix: `countResult` is typed as a number, so access it directly instead of `recordset`
       message: 'All activity logs cleared successfully'
     })
   } catch (error) {

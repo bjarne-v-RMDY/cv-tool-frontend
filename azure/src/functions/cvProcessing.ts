@@ -81,7 +81,7 @@ app.storageQueue('cvProcessing', {
             const containerClient = blobServiceClient.getContainerClient(containerName);
             const blobClient = containerClient.getBlobClient(blobName);
             const download = await blobClient.download();
-            const buffer = await streamToBuffer(download.readableStreamBody);
+            const buffer = await streamToBuffer(download.readableStreamBody || null);
 
             // Extract text based on mime type
             let cvText = '';
