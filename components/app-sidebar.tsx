@@ -60,7 +60,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </div>
           <div className="flex flex-col gap-0.5 leading-none">
             <span className="font-medium">CV-Tool</span>
-            <span className="text-xs">v0.0.3</span>
+            <span className="text-xs">v0.1.0</span>
           </div>
         </div>
       </SidebarHeader>
