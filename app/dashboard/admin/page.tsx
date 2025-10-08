@@ -3,13 +3,14 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Trash2, Database, FileX, AlertTriangle, Users } from 'lucide-react'
+import { Trash2, Database, FileX, AlertTriangle, Users, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 
 export default function AdminPage() {
     const [isClearing, setIsClearing] = useState(false)
     const [isRemoving, setIsRemoving] = useState(false)
     const [isClearingPeople, setIsClearingPeople] = useState(false)
+    const [isReindexing, setIsReindexing] = useState(false)
 
     const handleClearLogs = async () => {
         if (!confirm('Are you sure you want to clear ALL activity logs? This action cannot be undone.')) {
@@ -83,6 +84,31 @@ export default function AdminPage() {
             toast.error('Failed to clear people data')
         } finally {
             setIsClearingPeople(false)
+        }
+    }
+
+    const handleReindex = async () => {
+        if (!confirm('Re-index all candidates in AI Search? This will update the search index with latest data from all users.')) {
+            return
+        }
+
+        setIsReindexing(true)
+        try {
+            const response = await fetch('/api/admin/reindex', {
+                method: 'POST',
+            })
+
+            if (response.ok) {
+                const result = await response.json()
+                toast.success(`Queued ${result.count} candidates for re-indexing`)
+            } else {
+                throw new Error('Failed to start re-indexing')
+            }
+        } catch (error) {
+            console.error('Error re-indexing:', error)
+            toast.error('Failed to start re-indexing')
+        } finally {
+            setIsReindexing(false)
         }
     }
 
@@ -165,6 +191,29 @@ export default function AdminPage() {
                         >
                             <Trash2 className="mr-2 h-4 w-4" />
                             {isClearingPeople ? 'Clearing People...' : 'Clear All People'}
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                {/* Re-index AI Search */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <RefreshCw className="h-5 w-5" />
+                            Re-index AI Search
+                        </CardTitle>
+                        <CardDescription>
+                            Queue all candidates for re-indexing in Azure AI Search. Updates search index with latest data.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button
+                            onClick={handleReindex}
+                            disabled={isReindexing}
+                            className="w-full"
+                        >
+                            <RefreshCw className={`mr-2 h-4 w-4 ${isReindexing ? 'animate-spin' : ''}`} />
+                            {isReindexing ? 'Queueing...' : 'Re-index All'}
                         </Button>
                     </CardContent>
                 </Card>
