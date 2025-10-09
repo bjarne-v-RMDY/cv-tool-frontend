@@ -92,13 +92,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar {...props} variant="inset">
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2 py-2">
-          <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-            <span className="text-xs font-bold">CV</span>
+        <div className="flex items-center gap-3 px-2 py-4">
+          <div className="bg-primary text-primary-foreground flex aspect-square size-10 items-center justify-center rounded-lg shadow-sm">
+            <span className="text-sm font-bold tracking-tight">RMDY</span>
           </div>
           <div className="flex flex-col gap-0.5 leading-none">
-            <span className="font-medium">CV-Tool</span>
-            <span className="text-xs text-muted-foreground">v0.1.0</span>
+            <span className="font-semibold text-base">CV-Tool</span>
+            <span className="text-xs text-muted-foreground">Talent Management</span>
           </div>
         </div>
       </SidebarHeader>

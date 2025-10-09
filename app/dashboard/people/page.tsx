@@ -39,19 +39,19 @@ function createPersonSlug(person: Person) {
     return `${person.Id}-${nameSlug}`
 }
 
-// Simple Person List Item Component
+// Simple Person List Item Component with RMDY styling
 function PersonListItem({ person }: { person: Person }) {
     return (
         <Link href={`/dashboard/people/${createPersonSlug(person)}`}>
-            <Card className="hover:shadow-md transition-shadow cursor-pointer mb-2">
+            <Card className="rmdy-card hover:shadow-md cursor-pointer mb-2">
                 <CardContent className="p-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center font-semibold text-primary">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center font-bold text-primary ring-2 ring-primary/10">
                                 {person.Name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                             </div>
                             <div>
-                                <h3 className="font-medium text-lg">{person.Name}</h3>
+                                <h3 className="font-semibold text-lg">{person.Name}</h3>
                                 <div className="flex items-center gap-4 text-sm text-muted-foreground">
                                     {person.Email && (
                                         <div className="flex items-center gap-1">
@@ -70,11 +70,11 @@ function PersonListItem({ person }: { person: Person }) {
                         </div>
                         <div className="flex items-center gap-2">
                             {person.DynamicFields.YearsOfExperience && (
-                                <Badge variant="secondary">
+                                <Badge variant="outline" className="border-primary/30 text-primary">
                                     {person.DynamicFields.YearsOfExperience}y exp
                                 </Badge>
                             )}
-                            <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                            <ChevronRight className="h-4 w-4 text-primary/50" />
                         </div>
                     </div>
                 </CardContent>
@@ -107,48 +107,66 @@ export default function PeoplePage() {
     }
 
     return (
-        <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-            <div className="flex items-center justify-between space-y-2">
-                <h2 className="text-3xl font-bold tracking-tight">People</h2>
-                <Badge variant="secondary" className="text-sm">
-                    {people.length} {people.length === 1 ? 'person' : 'people'}
-                </Badge>
+        <div className="h-screen flex flex-col">
+            {/* Header Toolbar */}
+            <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className="flex items-center justify-between px-4 md:px-8 py-4">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">
+                            <span className="rmdy-accent">Candidate</span> Profiles
+                        </h1>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Browse and manage candidate profiles
+                        </p>
+                    </div>
+                    <Badge className="text-sm">
+                        {people.length} {people.length === 1 ? 'candidate' : 'candidates'}
+                    </Badge>
+                </div>
             </div>
 
-            {isLoading ? (
-                <div className="space-y-2">
-                    {[1, 2, 3].map((i) => (
-                        <Card key={i}>
-                            <CardContent className="p-4">
-                                <div className="flex items-center gap-3">
-                                    <Skeleton className="h-10 w-10 rounded-full" />
-                                    <div className="flex-1 space-y-2">
-                                        <Skeleton className="h-5 w-48" />
-                                        <Skeleton className="h-4 w-64" />
+            {/* Content Area */}
+            <div className="flex-1 overflow-auto p-4 md:p-8">
+                {isLoading ? (
+                    <div className="space-y-2">
+                        {[1, 2, 3].map((i) => (
+                            <Card key={i} className="mb-2">
+                                <CardContent className="p-4">
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center gap-3">
+                                            <Skeleton className="h-12 w-12 rounded-xl" />
+                                            <div className="space-y-2">
+                                                <Skeleton className="h-5 w-48" />
+                                                <Skeleton className="h-4 w-64" />
+                                            </div>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <Skeleton className="h-6 w-16" />
+                                            <Skeleton className="h-4 w-4" />
+                                        </div>
                                     </div>
-                                    <Skeleton className="h-6 w-16" />
-                                </div>
-                            </CardContent>
-                        </Card>
-                    ))}
-                </div>
-            ) : people.length === 0 ? (
-                <Card>
-                    <CardContent className="pt-6">
-                        <div className="text-center py-8 text-muted-foreground">
-                            <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                            <p className="text-lg font-medium">No people yet</p>
-                            <p className="text-sm">Upload and process CVs to see candidates here</p>
-                        </div>
-                    </CardContent>
-                </Card>
-            ) : (
-                <div className="space-y-2">
-                    {people.map((person) => (
-                        <PersonListItem key={person.Id} person={person} />
-                    ))}
-                </div>
-            )}
+                                </CardContent>
+                            </Card>
+                        ))}
+                    </div>
+                ) : people.length === 0 ? (
+                    <Card>
+                        <CardContent className="pt-6">
+                            <div className="text-center py-8 text-muted-foreground">
+                                <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                                <p className="text-lg font-medium">No people yet</p>
+                                <p className="text-sm">Upload and process CVs to see candidates here</p>
+                            </div>
+                        </CardContent>
+                    </Card>
+                ) : (
+                    <div className="space-y-2">
+                        {people.map((person) => (
+                            <PersonListItem key={person.Id} person={person} />
+                        ))}
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
