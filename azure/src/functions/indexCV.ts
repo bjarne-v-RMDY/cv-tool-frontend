@@ -349,14 +349,30 @@ ${Object.entries(techByCategory).map(([category, techs]) => `${category}: ${tech
         );
 
     } catch (error) {
-        context.error('Error indexing CV:', error);
-        await addActivityLog(
-            'indexing',
-            'Indexing Failed',
-            `Failed to index candidate data: ${error instanceof Error ? error.message : 'Unknown error'}`,
-            'failed',
-            { userId, error: String(error) }
-        );
+        // Check if error is due to connection being closed (concurrent access issue)
+        const isConnectionClosed = error instanceof Error && 
+            (error.message.includes('Connection is closed') || 
+             (error as any).code === 'ECONNCLOSED');
+        
+        if (isConnectionClosed) {
+            context.warn('Connection closed during indexing (concurrent access detected) - will retry automatically:', error);
+            await addActivityLog(
+                'indexing',
+                'Indexing Queued for Retry',
+                `Indexing paused due to concurrent access. Azure Functions will automatically retry (${userId ? `User ID: ${userId}` : 'Unknown user'})`,
+                'pending',
+                { userId, retryReason: 'connection_closed', willRetry: true }
+            );
+        } else {
+            context.error('Error indexing CV:', error);
+            await addActivityLog(
+                'indexing',
+                'Indexing Failed',
+                `Failed to index candidate data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+                'failed',
+                { userId, error: String(error) }
+            );
+        }
         throw error;
     }
 }
