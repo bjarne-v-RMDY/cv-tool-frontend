@@ -11,9 +11,29 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar"
+import {
+  Home,
+  FileText,
+  Users,
+  MessageCircle,
+  Settings,
+  type LucideIcon
+} from "lucide-react"
 
-// This is sample data.
-const data = {
+// Navigation data with icons
+interface NavItem {
+  title: string
+  url: string
+  icon?: LucideIcon
+}
+
+interface NavGroup {
+  title: string
+  url: string
+  items: NavItem[]
+}
+
+const data: { navMain: NavGroup[] } = {
   navMain: [
     {
       title: "Navigation",
@@ -22,18 +42,22 @@ const data = {
         {
           title: "Home",
           url: "/dashboard",
+          icon: Home,
         },
         {
           title: "CVs",
           url: "/dashboard/cvs",
+          icon: FileText,
         },
         {
           title: "People",
           url: "/dashboard/people",
+          icon: Users,
         },
         {
           title: "Chat",
           url: "/dashboard/chat",
+          icon: MessageCircle,
         },
       ],
     },
@@ -44,6 +68,7 @@ const data = {
         {
           title: "Admin Panel",
           url: "/dashboard/admin",
+          icon: Settings,
         },
       ],
     }] : []),
@@ -60,7 +85,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
           </div>
           <div className="flex flex-col gap-0.5 leading-none">
             <span className="font-medium">CV-Tool</span>
-            <span className="text-xs">v0.1.0</span>
+            <span className="text-xs text-muted-foreground">v0.1.0</span>
           </div>
         </div>
       </SidebarHeader>
@@ -71,13 +96,19 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             <SidebarGroupLabel>{item.title}</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {item.items.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <a href={item.url}>{item.title}</a>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {item.items.map((navItem) => {
+                  const Icon = navItem.icon
+                  return (
+                    <SidebarMenuItem key={navItem.title}>
+                      <SidebarMenuButton asChild>
+                        <a href={navItem.url} className="flex items-center gap-2">
+                          {Icon && <Icon className="h-4 w-4" />}
+                          <span>{navItem.title}</span>
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )
+                })}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
