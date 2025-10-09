@@ -117,7 +117,9 @@ export default function DashboardLayout({
                     </Breadcrumb>
                     <div className="ml-auto flex items-center gap-2">
                         {pathname !== '/dashboard/chat' && (
-                            <ChatToggle isOpen={isChatOpen} onToggle={toggleChat} />
+                            <div className="hidden md:block">
+                                <ChatToggle isOpen={isChatOpen} onToggle={toggleChat} />
+                            </div>
                         )}
                         <Button
                             variant="ghost"
@@ -135,7 +137,10 @@ export default function DashboardLayout({
                     <div className={`flex-1 flex flex-col transition-all duration-300 ${isChatOpen ? 'mr-0' : 'mr-0'}`}>
                         {children}
                     </div>
-                    <ChatPanel isOpen={isChatOpen} onClose={() => setChatOpen(false)} />
+                    {/* Chat panel hidden on mobile - users should use the dedicated chat page instead */}
+                    <div className="hidden md:block">
+                        <ChatPanel isOpen={isChatOpen} onClose={() => setChatOpen(false)} />
+                    </div>
                 </div>
             </SidebarInset>
             <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />

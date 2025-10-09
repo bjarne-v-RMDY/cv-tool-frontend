@@ -4,28 +4,28 @@ import { ActivityLog } from "@/components/activity-log"
 
 export default function Page() {
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 md:p-8 h-full overflow-hidden">
+    <div className="flex flex-1 flex-col gap-4 md:gap-6 p-3 sm:p-4 md:p-8 h-full overflow-hidden">
       {/* Welcome Header */}
       <div className="flex-shrink-0">
-        <h1 className="text-3xl font-bold tracking-tight">
+        <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">
           Welcome to <span className="rmdy-accent">RMDY</span> CV-Tool
         </h1>
-        <p className="text-muted-foreground mt-2">
+        <p className="text-sm sm:text-base text-muted-foreground mt-1 sm:mt-2">
           Manage candidates, upload CVs, and discover talent with AI-powered search
         </p>
       </div>
 
       {/* Quick Actions */}
-      <div className="grid auto-rows-min gap-4 md:grid-cols-3 flex-shrink-0">
+      <div className="grid auto-rows-min gap-3 sm:gap-4 md:grid-cols-3 flex-shrink-0">
         {/* CVs Card */}
         <Link href="/dashboard/cvs" className="group">
-          <div className="rmdy-card bg-card border rounded-xl p-6 h-full flex flex-col items-center justify-center gap-4 hover:bg-accent">
-            <div className="bg-primary/10 p-4 rounded-xl group-hover:bg-primary/20 transition-colors">
-              <Upload className="h-7 w-7 text-primary" />
+          <div className="rmdy-card bg-card border rounded-xl p-5 sm:p-6 h-full flex flex-col items-center justify-center gap-3 sm:gap-4 hover:bg-accent active:scale-95 transition-transform">
+            <div className="bg-primary/10 p-3 sm:p-4 rounded-xl group-hover:bg-primary/20 transition-colors">
+              <Upload className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
             </div>
             <div className="text-center">
-              <h3 className="font-semibold text-lg">CVs</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h3 className="font-semibold text-base sm:text-lg">CVs</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 Upload and manage CV files
               </p>
             </div>
@@ -34,13 +34,13 @@ export default function Page() {
 
         {/* People Card */}
         <Link href="/dashboard/people" className="group">
-          <div className="rmdy-card bg-card border rounded-xl p-6 h-full flex flex-col items-center justify-center gap-4 hover:bg-accent">
-            <div className="bg-primary/10 p-4 rounded-xl group-hover:bg-primary/20 transition-colors">
-              <Users className="h-7 w-7 text-primary" />
+          <div className="rmdy-card bg-card border rounded-xl p-5 sm:p-6 h-full flex flex-col items-center justify-center gap-3 sm:gap-4 hover:bg-accent active:scale-95 transition-transform">
+            <div className="bg-primary/10 p-3 sm:p-4 rounded-xl group-hover:bg-primary/20 transition-colors">
+              <Users className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
             </div>
             <div className="text-center">
-              <h3 className="font-semibold text-lg">People</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h3 className="font-semibold text-base sm:text-lg">People</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 Browse candidate profiles
               </p>
             </div>
@@ -49,13 +49,13 @@ export default function Page() {
 
         {/* Chat Card */}
         <Link href="/dashboard/chat" className="group">
-          <div className="rmdy-card bg-card border rounded-xl p-6 h-full flex flex-col items-center justify-center gap-4 hover:bg-accent">
-            <div className="bg-primary/10 p-4 rounded-xl group-hover:bg-primary/20 transition-colors">
-              <MessageCircle className="h-7 w-7 text-primary" />
+          <div className="rmdy-card bg-card border rounded-xl p-5 sm:p-6 h-full flex flex-col items-center justify-center gap-3 sm:gap-4 hover:bg-accent active:scale-95 transition-transform">
+            <div className="bg-primary/10 p-3 sm:p-4 rounded-xl group-hover:bg-primary/20 transition-colors">
+              <MessageCircle className="h-6 w-6 sm:h-7 sm:w-7 text-primary" />
             </div>
             <div className="text-center">
-              <h3 className="font-semibold text-lg">Chat</h3>
-              <p className="text-sm text-muted-foreground mt-1">
+              <h3 className="font-semibold text-base sm:text-lg">Chat</h3>
+              <p className="text-xs sm:text-sm text-muted-foreground mt-1">
                 AI-powered candidate search
               </p>
             </div>

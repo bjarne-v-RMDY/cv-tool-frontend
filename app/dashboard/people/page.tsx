@@ -43,35 +43,36 @@ function createPersonSlug(person: Person) {
 function PersonListItem({ person }: { person: Person }) {
     return (
         <Link href={`/dashboard/people/${createPersonSlug(person)}`}>
-            <Card className="rmdy-card hover:shadow-md cursor-pointer mb-2">
-                <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center font-bold text-primary ring-2 ring-primary/10">
+            <Card className="rmdy-card hover:shadow-md cursor-pointer mb-2 active:scale-[0.98] transition-transform">
+                <CardContent className="p-3 sm:p-4">
+                    <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 sm:gap-3 min-w-0 flex-1">
+                            <div className="w-10 h-10 sm:w-12 sm:h-12 flex-shrink-0 rounded-xl bg-gradient-to-br from-primary/20 to-primary/10 flex items-center justify-center font-bold text-sm sm:text-base text-primary ring-2 ring-primary/10">
                                 {person.Name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)}
                             </div>
-                            <div>
-                                <h3 className="font-semibold text-lg">{person.Name}</h3>
-                                <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                            <div className="min-w-0 flex-1">
+                                <h3 className="font-semibold text-base sm:text-lg truncate">{person.Name}</h3>
+                                <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                                     {person.Email && (
-                                        <div className="flex items-center gap-1">
-                                            <Mail className="h-3 w-3" />
-                                            <span>{person.Email}</span>
+                                        <div className="flex items-center gap-1 min-w-0">
+                                            <Mail className="h-3 w-3 flex-shrink-0" />
+                                            <span className="truncate hidden sm:inline">{person.Email}</span>
+                                            <span className="truncate sm:hidden">{person.Email.split('@')[0]}</span>
                                         </div>
                                     )}
                                     {person.Location && (
-                                        <div className="flex items-center gap-1">
+                                        <div className="flex items-center gap-1 flex-shrink-0">
                                             <MapPin className="h-3 w-3" />
-                                            <span>{person.Location}</span>
+                                            <span className="hidden md:inline">{person.Location}</span>
                                         </div>
                                     )}
                                 </div>
                             </div>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1 sm:gap-2 flex-shrink-0">
                             {person.DynamicFields.YearsOfExperience && (
-                                <Badge variant="outline" className="border-primary/30 text-primary">
-                                    {person.DynamicFields.YearsOfExperience}y exp
+                                <Badge variant="outline" className="border-primary/30 text-primary text-xs px-2">
+                                    {person.DynamicFields.YearsOfExperience}y
                                 </Badge>
                             )}
                             <ChevronRight className="h-4 w-4 text-primary/50" />
@@ -110,23 +111,23 @@ export default function PeoplePage() {
         <div className="h-screen flex flex-col">
             {/* Header Toolbar */}
             <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="flex items-center justify-between px-4 md:px-8 py-4">
-                    <div>
-                        <h1 className="text-2xl font-bold tracking-tight">
+                <div className="flex items-center justify-between px-3 sm:px-4 md:px-8 py-3 sm:py-4 gap-3">
+                    <div className="min-w-0 flex-1">
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
                             <span className="rmdy-accent">Candidate</span> Profiles
                         </h1>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 hidden sm:block">
                             Browse and manage candidate profiles
                         </p>
                     </div>
-                    <Badge className="text-sm">
-                        {people.length} {people.length === 1 ? 'candidate' : 'candidates'}
+                    <Badge className="text-xs sm:text-sm flex-shrink-0">
+                        {people.length}
                     </Badge>
                 </div>
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 overflow-auto p-4 md:p-8">
+            <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-8">
                 {isLoading ? (
                     <div className="space-y-2">
                         {[1, 2, 3].map((i) => (

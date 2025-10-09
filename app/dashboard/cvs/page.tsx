@@ -154,12 +154,12 @@ export default function CVsPage() {
         <div className="h-screen flex flex-col">
             {/* Header Toolbar */}
             <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="flex items-center justify-between px-4 md:px-8 py-4">
+                <div className="flex items-center justify-between px-3 sm:px-4 md:px-8 py-3 sm:py-4">
                     <div>
-                        <h1 className="text-2xl font-bold tracking-tight">
+                        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
                             <span className="rmdy-accent">CV</span> Management
                         </h1>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5 sm:mt-1 hidden sm:block">
                             Upload, view, and manage candidate CV files
                         </p>
                     </div>
@@ -167,31 +167,31 @@ export default function CVsPage() {
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 overflow-auto p-4 md:p-8">
-                <div className="space-y-6">
+            <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-8">
+                <div className="space-y-4 sm:space-y-6">
                     {/* Upload Zone with RMDY styling */}
-                    <div
-                        className={`border-2 border-dashed rounded-xl p-10 text-center transition-all ${isDragOver
-                            ? "border-primary bg-primary/5 shadow-md"
-                            : "border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/50"
-                            }`}
-                        onDragOver={handleDragOver}
-                        onDragLeave={handleDragLeave}
-                        onDrop={handleDrop}
-                    >
-                        <div className="flex flex-col items-center gap-4">
-                            <div className="rounded-xl bg-primary/10 p-4">
-                                <Upload className="h-8 w-8 text-primary" />
-                            </div>
-                            <div className="space-y-2">
-                                <p className="text-lg font-medium">
+                <div
+                    className={`border-2 border-dashed rounded-xl p-6 sm:p-10 text-center transition-all ${isDragOver
+                        ? "border-primary bg-primary/5 shadow-md"
+                        : "border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/50"
+                        }`}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                >
+                    <div className="flex flex-col items-center gap-3 sm:gap-4">
+                        <div className="rounded-xl bg-primary/10 p-3 sm:p-4">
+                            <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+                        </div>
+                            <div className="space-y-1 sm:space-y-2">
+                                <p className="text-base sm:text-lg font-medium">
                                     Drag and drop your files here
                                 </p>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-xs sm:text-sm text-muted-foreground">
                                     or click to browse files
                                 </p>
                             </div>
-                            <Button asChild variant="outline">
+                            <Button asChild variant="outline" size="sm" className="sm:size-default">
                                 <label htmlFor="file-upload" className="cursor-pointer">
                                     <input
                                         id="file-upload"
@@ -205,7 +205,7 @@ export default function CVsPage() {
                                 </label>
                             </Button>
                             <p className="text-xs text-muted-foreground">
-                                PDF and TXT files are supported (max 10MB each)
+                                PDF and TXT files (max 10MB each)
                             </p>
                         </div>
                     </div>
