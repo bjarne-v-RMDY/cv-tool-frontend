@@ -78,7 +78,13 @@ export default function DashboardLayout({
     }, [pathname, setChatOpen])
 
     return (
-        <SidebarProvider>
+        <SidebarProvider
+            style={{
+                "--sidebar-transition-duration": "0ms",
+                "--sidebar-transition-easing": "linear"
+            } as React.CSSProperties}
+            className="[&_*]:!transition-none [&_*]:!duration-0"
+        >
             <AppSidebar />
             <SidebarInset className="h-screen flex flex-col">
                 <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
