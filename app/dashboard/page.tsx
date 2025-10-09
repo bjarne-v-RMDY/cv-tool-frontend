@@ -1,5 +1,5 @@
 import Link from "next/link"
-import { Upload } from "lucide-react"
+import { Upload, Users, MessageCircle } from "lucide-react"
 import { ActivityLog } from "@/components/activity-log"
 
 export default function Page() {
@@ -21,9 +21,35 @@ export default function Page() {
           </div>
         </Link>
 
-        {/* Placeholder skeletons */}
-        <div className="bg-muted/50 aspect-video rounded-xl" />
-        <div className="bg-muted/50 aspect-video rounded-xl" />
+        {/* People Card */}
+        <Link href="/dashboard/people" className="group">
+          <div className="bg-card border rounded-xl p-6 h-full flex flex-col items-center justify-center gap-4 hover:bg-accent transition-colors">
+            <div className="bg-primary/10 p-3 rounded-lg">
+              <Users className="h-6 w-6 text-primary" />
+            </div>
+            <div className="text-center">
+              <h3 className="font-semibold text-lg">People</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Browse candidate profiles
+              </p>
+            </div>
+          </div>
+        </Link>
+
+        {/* Chat Card */}
+        <Link href="/dashboard/chat" className="group">
+          <div className="bg-card border rounded-xl p-6 h-full flex flex-col items-center justify-center gap-4 hover:bg-accent transition-colors">
+            <div className="bg-primary/10 p-3 rounded-lg">
+              <MessageCircle className="h-6 w-6 text-primary" />
+            </div>
+            <div className="text-center">
+              <h3 className="font-semibold text-lg">Chat</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                AI-powered candidate search
+              </p>
+            </div>
+          </div>
+        </Link>
       </div>
 
       {/* Activity Log */}

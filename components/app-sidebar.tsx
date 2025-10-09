@@ -1,3 +1,5 @@
+"use client"
+
 import * as React from "react"
 import {
   Sidebar,
@@ -19,6 +21,7 @@ import {
   Settings,
   type LucideIcon
 } from "lucide-react"
+import { usePathname } from "next/navigation"
 
 // Navigation data with icons
 interface NavItem {
@@ -76,8 +79,18 @@ const data: { navMain: NavGroup[] } = {
 }
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const pathname = usePathname()
+
+  // Function to check if a nav item is active
+  const isActive = (url: string) => {
+    if (url === "/dashboard") {
+      return pathname === "/dashboard"
+    }
+    return pathname.startsWith(url)
+  }
+
   return (
-    <Sidebar {...props}>
+    <Sidebar {...props} variant="inset">
       <SidebarHeader>
         <div className="flex items-center gap-2 px-2 py-2">
           <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
@@ -98,9 +111,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               <SidebarMenu>
                 {item.items.map((navItem) => {
                   const Icon = navItem.icon
+                  const active = isActive(navItem.url)
                   return (
                     <SidebarMenuItem key={navItem.title}>
-                      <SidebarMenuButton asChild>
+                      <SidebarMenuButton asChild isActive={active}>
                         <a href={navItem.url} className="flex items-center gap-2">
                           {Icon && <Icon className="h-4 w-4" />}
                           <span>{navItem.title}</span>
