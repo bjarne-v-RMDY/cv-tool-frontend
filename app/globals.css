@@ -44,72 +44,78 @@
 }
 
 :root {
-  --radius: 0.625rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
+  --radius: 0.75rem;
+  /* RMDY Brand Colors - Light Mode */
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.15 0 0);
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
+  --card-foreground: oklch(0.15 0 0);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.15 0 0);
+  /* RMDY Orange as Primary - can be overridden dynamically */
+  --primary: #FF4D00; /* Default RMDY Orange */
+  --primary-foreground: oklch(1 0 0);
+  --secondary: oklch(0.96 0 0);
+  --secondary-foreground: oklch(0.15 0 0);
+  --muted: oklch(0.96 0 0);
+  --muted-foreground: oklch(0.50 0 0);
+  --accent: oklch(0.96 0.01 35); /* Subtle orange tint */
+  --accent-foreground: oklch(0.15 0 0);
   --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
-  --chart-1: oklch(0.646 0.222 41.116);
-  --chart-2: oklch(0.6 0.118 184.704);
-  --chart-3: oklch(0.398 0.07 227.392);
-  --chart-4: oklch(0.828 0.189 84.429);
-  --chart-5: oklch(0.769 0.188 70.08);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.145 0 0);
-  --sidebar-primary: oklch(0.205 0 0);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.97 0 0);
-  --sidebar-accent-foreground: oklch(0.205 0 0);
-  --sidebar-border: oklch(0.922 0 0);
-  --sidebar-ring: oklch(0.708 0 0);
+  --border: oklch(0.90 0 0);
+  --input: oklch(0.90 0 0);
+  --ring: #FF4D00; /* Default RMDY Orange ring */
+  --chart-1: #FF4D00; /* Default RMDY Orange */
+  --chart-2: oklch(0.45 0.15 250); /* Complementary blue */
+  --chart-3: oklch(0.55 0.18 150); /* Complementary teal */
+  --chart-4: oklch(0.70 0.15 80); /* Warm yellow */
+  --chart-5: oklch(0.40 0.12 280); /* Deep purple */
+  /* Sidebar with RMDY branding */
+  --sidebar: oklch(0.98 0 0);
+  --sidebar-foreground: oklch(0.15 0 0);
+  --sidebar-primary: #FF4D00; /* Default RMDY Orange */
+  --sidebar-primary-foreground: oklch(1 0 0);
+  --sidebar-accent: oklch(0.96 0.01 35);
+  --sidebar-accent-foreground: oklch(0.15 0 0);
+  --sidebar-border: oklch(0.92 0 0);
+  --sidebar-ring: #FF4D00;
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.922 0 0);
-  --primary-foreground: oklch(0.205 0 0);
-  --secondary: oklch(0.269 0 0);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.269 0 0);
-  --muted-foreground: oklch(0.708 0 0);
-  --accent: oklch(0.269 0 0);
-  --accent-foreground: oklch(0.985 0 0);
+  /* RMDY Brand Colors - Dark Mode */
+  --background: oklch(0.12 0 0); /* Deep charcoal */
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.18 0 0);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.18 0 0);
+  --popover-foreground: oklch(0.98 0 0);
+  /* RMDY Orange maintains brand in dark mode - can be overridden via JS */
+  --primary: var(--primary-dark, #FF6B2C); /* Lighter version for dark mode */
+  --primary-foreground: oklch(0.98 0 0);
+  --secondary: oklch(0.22 0 0);
+  --secondary-foreground: oklch(0.98 0 0);
+  --muted: oklch(0.22 0 0);
+  --muted-foreground: oklch(0.65 0 0);
+  --accent: oklch(0.22 0.02 35); /* Subtle orange tint */
+  --accent-foreground: oklch(0.98 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.488 0.243 264.376);
-  --chart-2: oklch(0.696 0.17 162.48);
-  --chart-3: oklch(0.769 0.188 70.08);
-  --chart-4: oklch(0.627 0.265 303.9);
-  --chart-5: oklch(0.645 0.246 16.439);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
+  --border: oklch(0.28 0 0);
+  --input: oklch(0.28 0 0);
+  --ring: var(--primary-dark, #FF6B2C); /* Match primary */
+  --chart-1: var(--primary-dark, #FF6B2C); /* Match primary */
+  --chart-2: oklch(0.55 0.18 250); /* Complementary blue */
+  --chart-3: oklch(0.60 0.20 150); /* Complementary teal */
+  --chart-4: oklch(0.75 0.18 80); /* Warm yellow */
+  --chart-5: oklch(0.50 0.15 280); /* Deep purple */
+  /* Sidebar with RMDY branding in dark */
+  --sidebar: oklch(0.15 0 0);
+  --sidebar-foreground: oklch(0.98 0 0);
+  --sidebar-primary: var(--primary-dark, #FF6B2C); /* Match primary */
+  --sidebar-primary-foreground: oklch(0.98 0 0);
+  --sidebar-accent: oklch(0.22 0.02 35);
+  --sidebar-accent-foreground: oklch(0.98 0 0);
+  --sidebar-border: oklch(0.25 0 0);
+  --sidebar-ring: var(--primary-dark, #FF6B2C); /* Match primary */
 }
 
 @layer base {
@@ -118,5 +124,32 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* RMDY Brand Enhancements */
+@layer components {
+  /* Enhanced focus states with RMDY orange */
+  .rmdy-focus {
+    @apply focus:ring-2 focus:ring-primary/50 focus:border-primary;
+  }
+  
+  /* RMDY-style card with subtle hover effect */
+  .rmdy-card {
+    @apply transition-all duration-200 hover:shadow-lg hover:border-primary/20;
+  }
+  
+  /* RMDY accent text */
+  .rmdy-accent {
+    @apply text-primary font-medium;
+  }
+  
+  /* Professional gradient background (subtle) */
+  .rmdy-gradient-bg {
+    background: linear-gradient(135deg, oklch(0.99 0 0) 0%, oklch(0.97 0.01 35) 100%);
+  }
+  
+  .dark .rmdy-gradient-bg {
+    background: linear-gradient(135deg, oklch(0.12 0 0) 0%, oklch(0.15 0.02 35) 100%);
   }
 }

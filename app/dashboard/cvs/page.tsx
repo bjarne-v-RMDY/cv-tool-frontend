@@ -151,226 +151,236 @@ export default function CVsPage() {
     }, [fetchCVs])
 
     return (
-        <div className="flex flex-1 flex-col gap-4 p-4">
-            <div className="space-y-4">
-                <div>
-                    <h1 className="text-2xl font-bold">CV Management</h1>
-                    <p className="text-muted-foreground">
-                        Upload, view, and manage CV files
-                    </p>
-                </div>
-
-                {/* Upload Zone */}
-                <div
-                    className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${isDragOver
-                        ? "border-primary bg-primary/5"
-                        : "border-muted-foreground/25 hover:border-muted-foreground/50"
-                        }`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                >
-                    <div className="flex flex-col items-center gap-4">
-                        <div className="rounded-full bg-muted p-3">
-                            <Upload className="h-6 w-6 text-muted-foreground" />
-                        </div>
-                        <div className="space-y-2">
-                            <p className="text-lg font-medium">
-                                Drag and drop your files here
-                            </p>
-                            <p className="text-sm text-muted-foreground">
-                                or click to browse files
-                            </p>
-                        </div>
-                        <Button asChild variant="outline">
-                            <label htmlFor="file-upload" className="cursor-pointer">
-                                <input
-                                    id="file-upload"
-                                    type="file"
-                                    multiple
-                                    accept=".pdf,.txt,application/pdf,text/plain"
-                                    onChange={handleFileSelect}
-                                    className="hidden"
-                                />
-                                Choose Files
-                            </label>
-                        </Button>
-                        <p className="text-xs text-muted-foreground">
-                            PDF and TXT files are supported (max 10MB each)
+        <div className="h-screen flex flex-col">
+            {/* Header Toolbar */}
+            <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className="flex items-center justify-between px-4 md:px-8 py-4">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">
+                            <span className="rmdy-accent">CV</span> Management
+                        </h1>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Upload, view, and manage candidate CV files
                         </p>
                     </div>
                 </div>
+            </div>
 
-                {/* File List */}
-                {files.length > 0 && (
-                    <div className="space-y-2">
-                        <h3 className="text-lg font-medium">Selected Files</h3>
-                        <div className="space-y-2">
-                            {files.map((file, index) => (
-                                <div
-                                    key={`${file.name}-${index}`}
-                                    className="flex items-center gap-3 rounded-lg border p-3"
-                                >
-                                    <FileText className="h-5 w-5 text-muted-foreground" />
-                                    <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium truncate">
-                                            {file.name}
-                                        </p>
-                                        <p className="text-xs text-muted-foreground">
-                                            {(file.size / 1024).toFixed(1)} KB
-                                        </p>
-                                    </div>
-                                    <Button
-                                        variant="ghost"
-                                        size="sm"
-                                        onClick={() => removeFile(index)}
-                                        className="h-8 w-8 p-0"
-                                    >
-                                        <X className="h-4 w-4" />
-                                    </Button>
-                                </div>
-                            ))}
-                        </div>
-
-                        {/* Upload Button */}
-                        <div className="pt-4">
-                            <Button
-                                onClick={handleUpload}
-                                disabled={isUploading || files.length === 0}
-                                className="w-full"
-                            >
-                                {isUploading ? (
-                                    <>
-                                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                        Uploading...
-                                    </>
-                                ) : (
-                                    <>
-                                        <Upload className="h-4 w-4 mr-2" />
-                                        Upload {files.length} file{files.length !== 1 ? 's' : ''}
-                                    </>
-                                )}
+            {/* Content Area */}
+            <div className="flex-1 overflow-auto p-4 md:p-8">
+                <div className="space-y-6">
+                    {/* Upload Zone with RMDY styling */}
+                    <div
+                        className={`border-2 border-dashed rounded-xl p-10 text-center transition-all ${isDragOver
+                            ? "border-primary bg-primary/5 shadow-md"
+                            : "border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/50"
+                            }`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                    >
+                        <div className="flex flex-col items-center gap-4">
+                            <div className="rounded-xl bg-primary/10 p-4">
+                                <Upload className="h-8 w-8 text-primary" />
+                            </div>
+                            <div className="space-y-2">
+                                <p className="text-lg font-medium">
+                                    Drag and drop your files here
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    or click to browse files
+                                </p>
+                            </div>
+                            <Button asChild variant="outline">
+                                <label htmlFor="file-upload" className="cursor-pointer">
+                                    <input
+                                        id="file-upload"
+                                        type="file"
+                                        multiple
+                                        accept=".pdf,.txt,application/pdf,text/plain"
+                                        onChange={handleFileSelect}
+                                        className="hidden"
+                                    />
+                                    Choose Files
+                                </label>
                             </Button>
+                            <p className="text-xs text-muted-foreground">
+                                PDF and TXT files are supported (max 10MB each)
+                            </p>
                         </div>
                     </div>
-                )}
 
-                {/* Upload Results */}
-                {(uploadResults.length > 0 || uploadErrors.length > 0) && (
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-medium">Upload Results</h3>
-
-                        {/* Success Results */}
-                        {uploadResults.length > 0 && (
+                    {/* File List */}
+                    {files.length > 0 && (
+                        <div className="space-y-2">
+                            <h3 className="text-lg font-medium">Selected Files</h3>
                             <div className="space-y-2">
-                                <h4 className="text-sm font-medium text-green-600 dark:text-green-400">
-                                    Successfully Uploaded ({uploadResults.length})
-                                </h4>
-                                <div className="space-y-2">
-                                    {uploadResults.map((result, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950"
-                                        >
-                                            <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                                                    {result.fileName}
-                                                </p>
-                                                <p className="text-xs text-green-600 dark:text-green-400">
-                                                    {(result.size / 1024).toFixed(1)} KB • Uploaded successfully
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-
-                        {/* Error Results */}
-                        {uploadErrors.length > 0 && (
-                            <div className="space-y-2">
-                                <h4 className="text-sm font-medium text-red-600 dark:text-red-400">
-                                    Upload Errors ({uploadErrors.length})
-                                </h4>
-                                <div className="space-y-2">
-                                    {uploadErrors.map((error, index) => (
-                                        <div
-                                            key={index}
-                                            className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950"
-                                        >
-                                            <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
-                                            <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium text-red-800 dark:text-red-200">
-                                                    {error.fileName}
-                                                </p>
-                                                <p className="text-xs text-red-600 dark:text-red-400">
-                                                    {error.error}
-                                                </p>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-
-                {/* Uploaded CVs List */}
-                <Card>
-                    <CardHeader>
-                        <CardTitle className="flex items-center justify-between">
-                            <span>Uploaded CVs</span>
-                            {cvFiles.length > 0 && (
-                                <span className="text-sm font-normal text-muted-foreground">
-                                    {cvFiles.length} file{cvFiles.length !== 1 ? 's' : ''}
-                                </span>
-                            )}
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        {isLoadingCVs ? (
-                            <div className="text-center py-8 text-muted-foreground">
-                                <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
-                                <p>Loading CVs...</p>
-                            </div>
-                        ) : cvFiles.length > 0 ? (
-                            <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                                {cvFiles.map((cv, index) => (
+                                {files.map((file, index) => (
                                     <div
-                                        key={cv.uniqueName}
-                                        className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                                        key={`${file.name}-${index}`}
+                                        className="flex items-center gap-3 rounded-lg border p-3"
                                     >
-                                        <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                        <FileText className="h-5 w-5 text-muted-foreground" />
                                         <div className="flex-1 min-w-0">
                                             <p className="text-sm font-medium truncate">
-                                                {cv.name}
+                                                {file.name}
                                             </p>
                                             <p className="text-xs text-muted-foreground">
-                                                {(cv.size / 1024).toFixed(1)} KB • {new Date(cv.uploadedAt).toLocaleDateString()} {new Date(cv.uploadedAt).toLocaleTimeString()}
+                                                {(file.size / 1024).toFixed(1)} KB
                                             </p>
                                         </div>
                                         <Button
-                                            variant="outline"
+                                            variant="ghost"
                                             size="sm"
-                                            onClick={() => handleDownload(cv.uniqueName, cv.name)}
-                                            className="flex-shrink-0"
+                                            onClick={() => removeFile(index)}
+                                            className="h-8 w-8 p-0"
                                         >
-                                            <Download className="h-4 w-4 mr-2" />
-                                            Download
+                                            <X className="h-4 w-4" />
                                         </Button>
                                     </div>
                                 ))}
                             </div>
-                        ) : (
-                            <div className="text-center py-8 text-muted-foreground">
-                                <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                                <p>No CVs uploaded yet</p>
-                                <p className="text-sm">Upload your first CV to get started</p>
+
+                            {/* Upload Button */}
+                            <div className="pt-4">
+                                <Button
+                                    onClick={handleUpload}
+                                    disabled={isUploading || files.length === 0}
+                                    className="w-full"
+                                >
+                                    {isUploading ? (
+                                        <>
+                                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                            Uploading...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Upload className="h-4 w-4 mr-2" />
+                                            Upload {files.length} file{files.length !== 1 ? 's' : ''}
+                                        </>
+                                    )}
+                                </Button>
                             </div>
-                        )}
-                    </CardContent>
-                </Card>
+                        </div>
+                    )}
+
+                    {/* Upload Results */}
+                    {(uploadResults.length > 0 || uploadErrors.length > 0) && (
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-medium">Upload Results</h3>
+
+                            {/* Success Results */}
+                            {uploadResults.length > 0 && (
+                                <div className="space-y-2">
+                                    <h4 className="text-sm font-medium text-green-600 dark:text-green-400">
+                                        Successfully Uploaded ({uploadResults.length})
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {uploadResults.map((result, index) => (
+                                            <div
+                                                key={index}
+                                                className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950"
+                                            >
+                                                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                                                        {result.fileName}
+                                                    </p>
+                                                    <p className="text-xs text-green-600 dark:text-green-400">
+                                                        {(result.size / 1024).toFixed(1)} KB • Uploaded successfully
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Error Results */}
+                            {uploadErrors.length > 0 && (
+                                <div className="space-y-2">
+                                    <h4 className="text-sm font-medium text-red-600 dark:text-red-400">
+                                        Upload Errors ({uploadErrors.length})
+                                    </h4>
+                                    <div className="space-y-2">
+                                        {uploadErrors.map((error, index) => (
+                                            <div
+                                                key={index}
+                                                className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950"
+                                            >
+                                                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                                                        {error.fileName}
+                                                    </p>
+                                                    <p className="text-xs text-red-600 dark:text-red-400">
+                                                        {error.error}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* Uploaded CVs List */}
+                    <Card>
+                        <CardHeader>
+                            <CardTitle className="flex items-center justify-between">
+                                <span>Uploaded CVs</span>
+                                {cvFiles.length > 0 && (
+                                    <span className="text-sm font-normal text-muted-foreground">
+                                        {cvFiles.length} file{cvFiles.length !== 1 ? 's' : ''}
+                                    </span>
+                                )}
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            {isLoadingCVs ? (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
+                                    <p>Loading CVs...</p>
+                                </div>
+                            ) : cvFiles.length > 0 ? (
+                                <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                                    {cvFiles.map((cv, index) => (
+                                        <div
+                                            key={cv.uniqueName}
+                                            className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                                        >
+                                            <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium truncate">
+                                                    {cv.name}
+                                                </p>
+                                                <p className="text-xs text-muted-foreground">
+                                                    {(cv.size / 1024).toFixed(1)} KB • {new Date(cv.uploadedAt).toLocaleDateString()} {new Date(cv.uploadedAt).toLocaleTimeString()}
+                                                </p>
+                                            </div>
+                                            <Button
+                                                variant="outline"
+                                                size="sm"
+                                                onClick={() => handleDownload(cv.uniqueName, cv.name)}
+                                                className="flex-shrink-0"
+                                            >
+                                                <Download className="h-4 w-4 mr-2" />
+                                                Download
+                                            </Button>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-8 text-muted-foreground">
+                                    <FileText className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                                    <p>No CVs uploaded yet</p>
+                                    <p className="text-sm">Upload your first CV to get started</p>
+                                </div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </div>
             </div>
         </div>
     )

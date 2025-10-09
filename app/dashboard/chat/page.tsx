@@ -14,15 +14,22 @@ export default function ChatPage() {
 
     return (
         <div className="h-screen flex flex-col">
-            {/* Header */}
+            {/* Header with RMDY styling */}
             <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-                <div className="flex h-14 items-center justify-between px-4">
-                    <h1 className="text-lg font-semibold">AI Candidate Search</h1>
+                <div className="flex items-center justify-between px-4 md:px-8 py-4">
+                    <div>
+                        <h1 className="text-2xl font-bold tracking-tight">
+                            AI <span className="rmdy-accent">Candidate Search</span>
+                        </h1>
+                        <p className="text-sm text-muted-foreground mt-1">
+                            Find the perfect candidates with intelligent search
+                        </p>
+                    </div>
                     <Button
-                        variant="ghost"
+                        variant="outline"
                         size="sm"
                         onClick={handleClearChat}
-                        className="gap-2"
+                        className="gap-2 hover:border-primary hover:text-primary"
                     >
                         <Trash2 className="h-4 w-4" />
                         Clear History
