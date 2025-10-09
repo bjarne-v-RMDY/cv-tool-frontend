@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 
 interface SidebarChatState {
     isOpen: boolean
@@ -6,8 +7,15 @@ interface SidebarChatState {
     toggle: () => void
 }
 
-export const useSidebarChatStore = create<SidebarChatState>((set) => ({
-    isOpen: false,
-    setOpen: (isOpen) => set({ isOpen }),
-    toggle: () => set((state) => ({ isOpen: !state.isOpen })),
-}))
+export const useSidebarChatStore = create<SidebarChatState>()(
+    persist(
+        (set) => ({
+            isOpen: false,
+            setOpen: (isOpen) => set({ isOpen }),
+            toggle: () => set((state) => ({ isOpen: !state.isOpen })),
+        }),
+        {
+            name: 'cvtool-sidebar-chat-storage',
+        }
+    )
+)
