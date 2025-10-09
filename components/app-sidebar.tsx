@@ -94,10 +94,10 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarHeader>
         <div className="flex items-center gap-3 px-2 py-4">
           <div className="bg-primary text-primary-foreground flex aspect-square size-10 items-center justify-center rounded-lg shadow-sm">
-            <span className="text-sm font-bold tracking-tight">RMDY</span>
+            <span className="text-xs font-bold tracking-tight">RMDY</span>
           </div>
           <div className="flex flex-col gap-0.5 leading-none">
-            <span className="font-semibold text-base">CV-Tool</span>
+            <span className="font-semibold text-base">RMDY CV-Tool</span>
             <span className="text-xs text-muted-foreground">Talent Management</span>
           </div>
         </div>

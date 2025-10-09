@@ -5,7 +5,10 @@ import { AppSidebar } from "@/components/app-sidebar"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { ChatToggle } from "@/components/chat-toggle"
 import { ChatPanel } from "@/components/chat-panel"
+import { SettingsDialog } from "@/components/settings-dialog"
 import { useSidebarChatStore } from "@/lib/sidebar-chat-store"
+import { Button } from "@/components/ui/button"
+import { Settings } from "lucide-react"
 import {
     Breadcrumb,
     BreadcrumbItem,
@@ -69,6 +72,7 @@ export default function DashboardLayout({
     const pathname = usePathname()
     const breadcrumbs = generateBreadcrumbs(pathname)
     const { isOpen: isChatOpen, toggle: toggleChat, setOpen: setChatOpen } = useSidebarChatStore()
+    const [settingsOpen, setSettingsOpen] = React.useState(false)
 
     // Close sidebar chat when on the chat page
     React.useEffect(() => {
@@ -115,6 +119,15 @@ export default function DashboardLayout({
                         {pathname !== '/dashboard/chat' && (
                             <ChatToggle isOpen={isChatOpen} onToggle={toggleChat} />
                         )}
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setSettingsOpen(true)}
+                            title="Settings"
+                        >
+                            <Settings className="h-[1.2rem] w-[1.2rem]" />
+                            <span className="sr-only">Settings</span>
+                        </Button>
                         <ThemeToggle />
                     </div>
                 </header>
@@ -125,6 +138,7 @@ export default function DashboardLayout({
                     <ChatPanel isOpen={isChatOpen} onClose={() => setChatOpen(false)} />
                 </div>
             </SidebarInset>
+            <SettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} />
         </SidebarProvider>
     )
 }
