@@ -236,9 +236,6 @@ export function ChatPanel({
                         <span className="sr-only">Send message</span>
                     </Button>
                 </form>
-                <p className="text-xs text-muted-foreground mt-2">
-                    💡 Try: &quot;Who knows Azure?&quot; or &quot;5+ years React&quot;
-                </p>
             </div>
         </div>
     )

@@ -136,13 +136,13 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
                         <div className="rounded-lg border p-3 sm:p-4 space-y-2 sm:space-y-3">
                             <Label className="text-xs sm:text-sm text-muted-foreground">Preview</Label>
                             <div className="flex flex-wrap gap-2">
-                                <Button size="sm" style={{ 
+                                <Button size="sm" style={{
                                     backgroundColor: tempColor,
                                     color: 'white'
                                 }}>
                                     Primary
                                 </Button>
-                                <Button size="sm" variant="outline" style={{ 
+                                <Button size="sm" variant="outline" style={{
                                     borderColor: tempColor,
                                     color: tempColor
                                 }}>
