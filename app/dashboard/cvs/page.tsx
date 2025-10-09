@@ -170,19 +170,19 @@ export default function CVsPage() {
             <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-8">
                 <div className="space-y-4 sm:space-y-6">
                     {/* Upload Zone with RMDY styling */}
-                <div
-                    className={`border-2 border-dashed rounded-xl p-6 sm:p-10 text-center transition-all ${isDragOver
-                        ? "border-primary bg-primary/5 shadow-md"
-                        : "border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/50"
-                        }`}
-                    onDragOver={handleDragOver}
-                    onDragLeave={handleDragLeave}
-                    onDrop={handleDrop}
-                >
-                    <div className="flex flex-col items-center gap-3 sm:gap-4">
-                        <div className="rounded-xl bg-primary/10 p-3 sm:p-4">
-                            <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-                        </div>
+                    <div
+                        className={`border-2 border-dashed rounded-xl p-6 sm:p-10 text-center transition-all ${isDragOver
+                            ? "border-primary bg-primary/5 shadow-md"
+                            : "border-muted-foreground/25 hover:border-primary/50 hover:bg-accent/50"
+                            }`}
+                        onDragOver={handleDragOver}
+                        onDragLeave={handleDragLeave}
+                        onDrop={handleDrop}
+                    >
+                        <div className="flex flex-col items-center gap-3 sm:gap-4">
+                            <div className="rounded-xl bg-primary/10 p-3 sm:p-4">
+                                <Upload className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
+                            </div>
                             <div className="space-y-1 sm:space-y-2">
                                 <p className="text-base sm:text-lg font-medium">
                                     Drag and drop your files here
@@ -213,16 +213,16 @@ export default function CVsPage() {
                     {/* File List */}
                     {files.length > 0 && (
                         <div className="space-y-2">
-                            <h3 className="text-lg font-medium">Selected Files</h3>
+                            <h3 className="text-base sm:text-lg font-medium">Selected Files</h3>
                             <div className="space-y-2">
                                 {files.map((file, index) => (
                                     <div
                                         key={`${file.name}-${index}`}
-                                        className="flex items-center gap-3 rounded-lg border p-3"
+                                        className="flex items-center gap-2 sm:gap-3 rounded-lg border p-2 sm:p-3"
                                     >
-                                        <FileText className="h-5 w-5 text-muted-foreground" />
+                                        <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
                                         <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium truncate">
+                                            <p className="text-xs sm:text-sm font-medium truncate">
                                                 {file.name}
                                             </p>
                                             <p className="text-xs text-muted-foreground">
@@ -231,9 +231,9 @@ export default function CVsPage() {
                                         </div>
                                         <Button
                                             variant="ghost"
-                                            size="sm"
+                                            size="icon"
                                             onClick={() => removeFile(index)}
-                                            className="h-8 w-8 p-0"
+                                            className="h-8 w-8 flex-shrink-0"
                                         >
                                             <X className="h-4 w-4" />
                                         </Button>
@@ -266,28 +266,28 @@ export default function CVsPage() {
 
                     {/* Upload Results */}
                     {(uploadResults.length > 0 || uploadErrors.length > 0) && (
-                        <div className="space-y-4">
-                            <h3 className="text-lg font-medium">Upload Results</h3>
+                        <div className="space-y-3 sm:space-y-4">
+                            <h3 className="text-base sm:text-lg font-medium">Upload Results</h3>
 
                             {/* Success Results */}
                             {uploadResults.length > 0 && (
                                 <div className="space-y-2">
-                                    <h4 className="text-sm font-medium text-green-600 dark:text-green-400">
+                                    <h4 className="text-xs sm:text-sm font-medium text-green-600 dark:text-green-400">
                                         Successfully Uploaded ({uploadResults.length})
                                     </h4>
                                     <div className="space-y-2">
                                         {uploadResults.map((result, index) => (
                                             <div
                                                 key={index}
-                                                className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-3 dark:border-green-800 dark:bg-green-950"
+                                                className="flex items-center gap-2 sm:gap-3 rounded-lg border border-green-200 bg-green-50 p-2 sm:p-3 dark:border-green-800 dark:bg-green-950"
                                             >
-                                                <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" />
+                                                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-600 dark:text-green-400 flex-shrink-0" />
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-green-800 dark:text-green-200">
+                                                    <p className="text-xs sm:text-sm font-medium text-green-800 dark:text-green-200 truncate">
                                                         {result.fileName}
                                                     </p>
                                                     <p className="text-xs text-green-600 dark:text-green-400">
-                                                        {(result.size / 1024).toFixed(1)} KB • Uploaded successfully
+                                                        {(result.size / 1024).toFixed(1)} KB
                                                     </p>
                                                 </div>
                                             </div>
@@ -299,21 +299,21 @@ export default function CVsPage() {
                             {/* Error Results */}
                             {uploadErrors.length > 0 && (
                                 <div className="space-y-2">
-                                    <h4 className="text-sm font-medium text-red-600 dark:text-red-400">
+                                    <h4 className="text-xs sm:text-sm font-medium text-red-600 dark:text-red-400">
                                         Upload Errors ({uploadErrors.length})
                                     </h4>
                                     <div className="space-y-2">
                                         {uploadErrors.map((error, index) => (
                                             <div
                                                 key={index}
-                                                className="flex items-center gap-3 rounded-lg border border-red-200 bg-red-50 p-3 dark:border-red-800 dark:bg-red-950"
+                                                className="flex items-center gap-2 sm:gap-3 rounded-lg border border-red-200 bg-red-50 p-2 sm:p-3 dark:border-red-800 dark:bg-red-950"
                                             >
-                                                <AlertCircle className="h-5 w-5 text-red-600 dark:text-red-400" />
+                                                <AlertCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-600 dark:text-red-400 flex-shrink-0" />
                                                 <div className="flex-1 min-w-0">
-                                                    <p className="text-sm font-medium text-red-800 dark:text-red-200">
+                                                    <p className="text-xs sm:text-sm font-medium text-red-800 dark:text-red-200 truncate">
                                                         {error.fileName}
                                                     </p>
-                                                    <p className="text-xs text-red-600 dark:text-red-400">
+                                                    <p className="text-xs text-red-600 dark:text-red-400 line-clamp-2">
                                                         {error.error}
                                                     </p>
                                                 </div>
@@ -328,10 +328,10 @@ export default function CVsPage() {
                     {/* Uploaded CVs List */}
                     <Card>
                         <CardHeader>
-                            <CardTitle className="flex items-center justify-between">
-                                <span>Uploaded CVs</span>
+                            <CardTitle className="flex items-center justify-between gap-2 text-base sm:text-lg">
+                                <span className="truncate">Uploaded CVs</span>
                                 {cvFiles.length > 0 && (
-                                    <span className="text-sm font-normal text-muted-foreground">
+                                    <span className="text-xs sm:text-sm font-normal text-muted-foreground flex-shrink-0">
                                         {cvFiles.length} file{cvFiles.length !== 1 ? 's' : ''}
                                     </span>
                                 )}
@@ -340,23 +340,23 @@ export default function CVsPage() {
                         <CardContent>
                             {isLoadingCVs ? (
                                 <div className="text-center py-8 text-muted-foreground">
-                                    <Loader2 className="h-8 w-8 mx-auto mb-2 animate-spin" />
-                                    <p>Loading CVs...</p>
+                                    <Loader2 className="h-6 w-6 sm:h-8 sm:w-8 mx-auto mb-2 animate-spin" />
+                                    <p className="text-sm">Loading CVs...</p>
                                 </div>
                             ) : cvFiles.length > 0 ? (
                                 <div className="space-y-2 max-h-[400px] overflow-y-auto">
                                     {cvFiles.map((cv, index) => (
                                         <div
                                             key={cv.uniqueName}
-                                            className="flex items-center gap-3 rounded-lg border p-3 hover:bg-muted/50 transition-colors"
+                                            className="flex items-center gap-2 sm:gap-3 rounded-lg border p-2 sm:p-3 hover:bg-muted/50 transition-colors"
                                         >
-                                            <FileText className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+                                            <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
                                             <div className="flex-1 min-w-0">
-                                                <p className="text-sm font-medium truncate">
-                                                    {cv.name}
+                                                <p className="text-xs sm:text-sm font-medium break-all" title={cv.name}>
+                                                    {cv.name.length > 30 ? cv.name.substring(0, 30) + '...' : cv.name}
                                                 </p>
                                                 <p className="text-xs text-muted-foreground">
-                                                    {(cv.size / 1024).toFixed(1)} KB • {new Date(cv.uploadedAt).toLocaleDateString()} {new Date(cv.uploadedAt).toLocaleTimeString()}
+                                                    {(cv.size / 1024).toFixed(1)} KB • {new Date(cv.uploadedAt).toLocaleDateString()}
                                                 </p>
                                             </div>
                                             <Button
@@ -364,9 +364,10 @@ export default function CVsPage() {
                                                 size="sm"
                                                 onClick={() => handleDownload(cv.uniqueName, cv.name)}
                                                 className="flex-shrink-0"
+                                                title={`Download ${cv.name}`}
                                             >
-                                                <Download className="h-4 w-4 mr-2" />
-                                                Download
+                                                <Download className="h-4 w-4" />
+                                                <span className="hidden sm:inline ml-2">Download</span>
                                             </Button>
                                         </div>
                                     ))}
