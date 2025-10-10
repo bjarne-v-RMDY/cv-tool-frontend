@@ -171,9 +171,9 @@ export default function ProjectsPage() {
     const selectedPerson = people.find(p => p.Id.toString() === selectedUserId)
 
     return (
-        <div className="h-screen flex flex-col">
+        <div className="flex flex-col h-full">
             {/* Header Toolbar */}
-            <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0">
                 <div className="flex items-center justify-between px-3 sm:px-4 md:px-8 py-3 sm:py-4">
                     <div>
                         <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
@@ -187,7 +187,7 @@ export default function ProjectsPage() {
             </div>
 
             {/* Content Area */}
-            <div className="flex-1 overflow-auto p-3 sm:p-4 md:p-8">
+            <div className="flex-1 overflow-y-auto min-h-0 p-3 sm:p-4 md:p-8">
                 <div className="space-y-4 sm:space-y-6">
                     {/* User Selection */}
                     <Card>
