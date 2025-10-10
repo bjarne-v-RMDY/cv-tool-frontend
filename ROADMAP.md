@@ -54,7 +54,7 @@
 
 ---
 
-## Phase 3: Project Assignment Processing (Epic E2)
+## Phase 3: Project Processing (Epic E2)
 
 ### 3.1 Assignment Upload API
 - [ ] **REST API Endpoint** - `/api/assignment/upload`
