@@ -20,6 +20,7 @@ import {
   MessageCircle,
   Settings,
   Briefcase,
+  Building2,
   type LucideIcon
 } from "lucide-react"
 import { usePathname } from "next/navigation"
@@ -57,6 +58,11 @@ const data: { navMain: NavGroup[] } = {
           title: "Projects",
           url: "/dashboard/projects",
           icon: Briefcase,
+        },
+        {
+          title: "Vacancies",
+          url: "/dashboard/vacancies",
+          icon: Building2,
         },
         {
           title: "People",
