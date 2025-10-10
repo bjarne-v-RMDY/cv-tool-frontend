@@ -13,9 +13,9 @@ export default function ChatPage() {
     }
 
     return (
-        <div className="h-screen flex flex-col">
+        <div className="flex flex-col h-full">
             {/* Header with RMDY styling */}
-            <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 shrink-0">
                 <div className="flex items-center justify-between px-3 sm:px-4 md:px-8 py-3 sm:py-4 gap-2 sm:gap-4">
                     <div className="min-w-0 flex-1">
                         <h1 className="text-xl sm:text-2xl font-bold tracking-tight">

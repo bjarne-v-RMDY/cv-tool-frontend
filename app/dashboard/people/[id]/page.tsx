@@ -126,9 +126,9 @@ export default function PersonDetailPage() {
     const languages = parseDynamicField(person.DynamicFields.Languages)
 
     return (
-        <div className="flex-1 flex flex-col h-screen">
+        <div className="flex flex-col h-full">
             {/* Fixed Header */}
-            <div className="flex-shrink-0 p-4 md:p-8 pb-4 border-b bg-background">
+            <div className="shrink-0 p-4 md:p-8 pb-4 border-b bg-background">
                 <div className="flex items-center gap-4">
                     <Link href="/dashboard/people">
                         <Button variant="ghost" size="icon">
@@ -152,7 +152,7 @@ export default function PersonDetailPage() {
             </div>
 
             {/* Scrollable Content */}
-            <div className="flex-1 overflow-y-auto p-4 md:p-8 pt-6">
+            <div className="flex-1 overflow-y-auto min-h-0 p-4 md:p-8 pt-6">
                 <div className="grid gap-6 lg:grid-cols-3">
                     {/* Left Column - Contact & Basic Info */}
                     <div className="space-y-6">
