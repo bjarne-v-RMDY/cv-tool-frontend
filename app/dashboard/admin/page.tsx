@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Trash2, Database, FileX, AlertTriangle, Users, RefreshCw, MessageCircle } from 'lucide-react'
+import { Trash2, Database, FileX, AlertTriangle, Users, RefreshCw, MessageCircle, Building2 } from 'lucide-react'
 import { toast } from 'sonner'
 import { useChatStore } from '@/lib/chat-store'
 
@@ -11,6 +11,7 @@ export default function AdminPage() {
     const [isClearing, setIsClearing] = useState(false)
     const [isRemoving, setIsRemoving] = useState(false)
     const [isClearingPeople, setIsClearingPeople] = useState(false)
+    const [isClearingVacancies, setIsClearingVacancies] = useState(false)
     const [isReindexing, setIsReindexing] = useState(false)
     const [isClearingChat, setIsClearingChat] = useState(false)
     const { clearChat } = useChatStore()
@@ -87,6 +88,31 @@ export default function AdminPage() {
             toast.error('Failed to clear people data')
         } finally {
             setIsClearingPeople(false)
+        }
+    }
+
+    const handleClearVacancies = async () => {
+        if (!confirm('Are you sure you want to clear ALL vacancies? This will delete all vacancy data, requirements, and files from storage. This action cannot be undone.')) {
+            return
+        }
+
+        setIsClearingVacancies(true)
+        try {
+            const response = await fetch('/api/admin/clear-vacancies', {
+                method: 'DELETE',
+            })
+
+            if (response.ok) {
+                const result = await response.json()
+                toast.success(`${result.message} (${result.deletedFiles || 0} files deleted from storage)`)
+            } else {
+                throw new Error('Failed to clear vacancies')
+            }
+        } catch (error) {
+            console.error('Error clearing vacancies:', error)
+            toast.error('Failed to clear vacancies')
+        } finally {
+            setIsClearingVacancies(false)
         }
     }
 
@@ -226,6 +252,30 @@ export default function AdminPage() {
                         >
                             <Trash2 className="mr-2 h-4 w-4" />
                             {isClearingPeople ? 'Clearing People...' : 'Clear All People'}
+                        </Button>
+                    </CardContent>
+                </Card>
+
+                {/* Clear Vacancies */}
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                            <Building2 className="h-5 w-5" />
+                            Clear Vacancies
+                        </CardTitle>
+                        <CardDescription>
+                            Delete all vacancies, requirements, and associated files from both the database and Azure Storage.
+                        </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                        <Button
+                            onClick={handleClearVacancies}
+                            disabled={isClearingVacancies}
+                            variant="destructive"
+                            className="w-full"
+                        >
+                            <Trash2 className="mr-2 h-4 w-4" />
+                            {isClearingVacancies ? 'Clearing Vacancies...' : 'Clear All Vacancies'}
                         </Button>
                     </CardContent>
                 </Card>
