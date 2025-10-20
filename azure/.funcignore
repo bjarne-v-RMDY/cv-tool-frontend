@@ -6,4 +6,7 @@ test
 *.md
 src
 tsconfig.json
-deploy.sh
+deploy*.sh
+node_modules
+package-lock.json
+../*
