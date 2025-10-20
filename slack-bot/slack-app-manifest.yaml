@@ -1,0 +1,58 @@
+display_information:
+  name: CV Tool Bot
+  description: Upload CVs, manage projects and vacancies, and search candidates
+  background_color: "#2c2d30"
+  
+features:
+  bot_user:
+    display_name: CV Tool Bot
+    always_online: true
+    
+  slash_commands:
+    - command: /upload-cv
+      url: https://your-app-url.azurecontainerapps.io/slack/events
+      description: Upload your CV to the CV Tool
+      usage_hint: ""
+      
+    - command: /upload-project
+      url: https://your-app-url.azurecontainerapps.io/slack/events
+      description: Upload project documentation
+      usage_hint: "[@user]"
+      
+    - command: /upload-vacancy
+      url: https://your-app-url.azurecontainerapps.io/slack/events
+      description: Upload a job vacancy document
+      usage_hint: ""
+      
+    - command: /chat
+      url: https://your-app-url.azurecontainerapps.io/slack/events
+      description: Search for candidates using AI
+      usage_hint: "your search query"
+      
+    - command: /match-vacancy
+      url: https://your-app-url.azurecontainerapps.io/slack/events
+      description: Find matching candidates for a vacancy
+      usage_hint: "[vacancy-id]"
+      
+    - command: /link-user
+      url: https://your-app-url.azurecontainerapps.io/slack/events
+      description: Manually link a Slack user to a CV Tool profile (admin)
+      usage_hint: "@user <cv-tool-user-id>"
+      
+oauth_config:
+  scopes:
+    bot:
+      - commands
+      - chat:write
+      - users:read
+      - users:read.email
+      
+settings:
+  interactivity:
+    is_enabled: true
+    request_url: https://your-app-url.azurecontainerapps.io/slack/events
+    
+  org_deploy_enabled: false
+  socket_mode_enabled: false
+  token_rotation_enabled: false
+
