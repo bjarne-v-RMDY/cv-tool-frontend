@@ -22,6 +22,34 @@ const dbConfig: sql.config = {
     }
 };
 
+// Function to generate email from name
+function generateEmailFromName(name: string): string {
+    if (!name || name === 'Unknown') {
+        return `temp_${Date.now()}@cvtool.local`;
+    }
+    
+    // Split name into parts and remove any empty strings
+    const nameParts = name.trim().split(/\s+/).filter(part => part.length > 0);
+    
+    if (nameParts.length === 0) {
+        return `temp_${Date.now()}@cvtool.local`;
+    }
+    
+    // Take first and last name
+    const firstName = nameParts[0].toLowerCase();
+    const lastName = nameParts.length > 1 ? nameParts[nameParts.length - 1].toLowerCase() : '';
+    
+    // Remove special characters and accents
+    const cleanFirst = firstName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+    const cleanLast = lastName.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]/g, '');
+    
+    if (cleanLast) {
+        return `${cleanFirst}.${cleanLast}@rmdy.be`;
+    } else {
+        return `${cleanFirst}@rmdy.be`;
+    }
+}
+
 // Function to add activity log entry
 async function addActivityLog(type: string, title: string, description: string, status: string = 'processing', metadata: any = {}): Promise<void> {
     try {
@@ -196,15 +224,26 @@ app.storageQueue('cvProcessing', {
                         const pool = await sql.connect(dbConfig);
                         const data = analysisResult as any;
 
+                        // Generate email if not found in CV
+                        let userEmail = data.email;
+                        if (!userEmail || userEmail.trim() === '') {
+                            userEmail = generateEmailFromName(data.name);
+                            context.log(`📧 No email found in CV, generated: ${userEmail}`);
+                        }
+
                         // Create or find user
                         let userId: number;
+                        let isExistingUser = false;
                         const userResult = await pool.request()
-                            .input('email', sql.NVarChar(100), data.email || `temp_${Date.now()}@cvtool.local`)
+                            .input('email', sql.NVarChar(100), userEmail)
                             .query('SELECT Id FROM Users WHERE Email = @email');
 
                         if (userResult.recordset.length > 0) {
                             userId = userResult.recordset[0].Id;
-                            // Update existing user
+                            isExistingUser = true;
+                            context.log(`📝 Found existing user with ID: ${userId}, will update their data`);
+                            
+                            // Update existing user (keep the email the same, just update other fields)
                             await pool.request()
                                 .input('userId', sql.Int, userId)
                                 .input('name', sql.NVarChar(100), data.name || 'Unknown')
@@ -212,28 +251,73 @@ app.storageQueue('cvProcessing', {
                                 .input('location', sql.NVarChar(100), data.location || null)
                                 .input('linkedIn', sql.NVarChar(200), data.linkedInProfile || null)
                                 .query('UPDATE Users SET Name = @name, Phone = @phone, Location = @location, LinkedInProfile = @linkedIn, UpdatedAt = GETUTCDATE() WHERE Id = @userId');
+                            
+                            // Delete old projects and their technologies (cascade will handle Technologies)
+                            await pool.request()
+                                .input('userId', sql.Int, userId)
+                                .query('DELETE FROM Projects WHERE UserId = @userId');
+                            
+                            // Delete old dynamic fields
+                            await pool.request()
+                                .input('userId', sql.Int, userId)
+                                .query('DELETE FROM UserDynamicFields WHERE UserId = @userId');
+                            
+                            context.log(`🗑️ Cleared old projects and dynamic fields for user ${userId}`);
                         } else {
                             // Insert new user
                             const insertResult = await pool.request()
                                 .input('name', sql.NVarChar(100), data.name || 'Unknown')
-                                .input('email', sql.NVarChar(100), data.email || `temp_${Date.now()}@cvtool.local`)
+                                .input('email', sql.NVarChar(100), userEmail)
                                 .input('phone', sql.NVarChar(20), data.phone || null)
                                 .input('location', sql.NVarChar(100), data.location || null)
                                 .input('linkedIn', sql.NVarChar(200), data.linkedInProfile || null)
                                 .query('INSERT INTO Users (Name, Email, Phone, Location, LinkedInProfile) OUTPUT INSERTED.Id VALUES (@name, @email, @phone, @location, @linkedIn)');
                             userId = insertResult.recordset[0].Id;
+                            context.log(`✨ Created new user with ID: ${userId} (email: ${userEmail})`);
                         }
 
-                        // Insert CV file record
-                        await pool.request()
-                            .input('userId', sql.Int, userId)
-                            .input('fileName', sql.NVarChar(200), item.fileName || blobName)
-                            .input('filePath', sql.NVarChar(500), item.blobUrl || '')
-                            .input('fileSize', sql.Int, item.fileSize || 0)
-                            .input('status', sql.NVarChar(50), 'Completed')
-                            .query('INSERT INTO CVFiles (UserId, FileName, FilePath, FileSize, ProcessingStatus) VALUES (@userId, @fileName, @filePath, @fileSize, @status)');
+                        // Handle CV file record - update if exists, insert if new
+                        if (isExistingUser) {
+                            // Check if user already has a CV file
+                            const existingCVResult = await pool.request()
+                                .input('userId', sql.Int, userId)
+                                .query('SELECT Id FROM CVFiles WHERE UserId = @userId');
+                            
+                            if (existingCVResult.recordset.length > 0) {
+                                // Update existing CV file record
+                                const cvFileId = existingCVResult.recordset[0].Id;
+                                await pool.request()
+                                    .input('cvFileId', sql.Int, cvFileId)
+                                    .input('fileName', sql.NVarChar(200), item.fileName || blobName)
+                                    .input('filePath', sql.NVarChar(500), item.blobUrl || '')
+                                    .input('fileSize', sql.Int, item.fileSize || 0)
+                                    .input('status', sql.NVarChar(50), 'Completed')
+                                    .query('UPDATE CVFiles SET FileName = @fileName, FilePath = @filePath, FileSize = @fileSize, ProcessingStatus = @status, UploadDate = GETUTCDATE() WHERE Id = @cvFileId');
+                                context.log(`📄 Updated existing CV file record (ID: ${cvFileId})`);
+                            } else {
+                                // Insert new CV file record (user exists but has no CV yet)
+                                await pool.request()
+                                    .input('userId', sql.Int, userId)
+                                    .input('fileName', sql.NVarChar(200), item.fileName || blobName)
+                                    .input('filePath', sql.NVarChar(500), item.blobUrl || '')
+                                    .input('fileSize', sql.Int, item.fileSize || 0)
+                                    .input('status', sql.NVarChar(50), 'Completed')
+                                    .query('INSERT INTO CVFiles (UserId, FileName, FilePath, FileSize, ProcessingStatus) VALUES (@userId, @fileName, @filePath, @fileSize, @status)');
+                                context.log(`📄 Inserted new CV file record for existing user`);
+                            }
+                        } else {
+                            // Insert CV file record for new user
+                            await pool.request()
+                                .input('userId', sql.Int, userId)
+                                .input('fileName', sql.NVarChar(200), item.fileName || blobName)
+                                .input('filePath', sql.NVarChar(500), item.blobUrl || '')
+                                .input('fileSize', sql.Int, item.fileSize || 0)
+                                .input('status', sql.NVarChar(50), 'Completed')
+                                .query('INSERT INTO CVFiles (UserId, FileName, FilePath, FileSize, ProcessingStatus) VALUES (@userId, @fileName, @filePath, @fileSize, @status)');
+                            context.log(`📄 Inserted CV file record for new user`);
+                        }
 
-                        // Insert projects from notableProjects
+                        // Insert projects from notableProjects (old ones already deleted if updating)
                         if (data.notableProjects && Array.isArray(data.notableProjects)) {
                             for (const project of data.notableProjects) {
                                 const projectResult = await pool.request()
@@ -256,9 +340,10 @@ app.storageQueue('cvProcessing', {
                                     }
                                 }
                             }
+                            context.log(`📊 Inserted ${data.notableProjects.length} projects`);
                         }
 
-                        // Insert dynamic fields
+                        // Insert dynamic fields (old ones already deleted if updating)
                         if (data.yearsOfExperience) {
                             await pool.request()
                                 .input('userId', sql.Int, userId)
@@ -306,6 +391,9 @@ app.storageQueue('cvProcessing', {
                                 .input('value', sql.NVarChar(sql.MAX), JSON.stringify(data.languagesSpoken))
                                 .query('INSERT INTO UserDynamicFields (UserId, FieldId, FieldValue) VALUES (@userId, @fieldId, @value)');
                         }
+                        
+                        context.log(`✅ Saved all data for user ${userId} (${isExistingUser ? 'updated' : 'new'})`);
+
 
                         await pool.close();
                         context.log(`✅ Successfully saved CV analysis to database for user ID: ${userId}`);

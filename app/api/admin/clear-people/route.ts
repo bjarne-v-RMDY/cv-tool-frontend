@@ -72,10 +72,17 @@ export async function DELETE() {
     }
 
     // Delete all related data in correct order (respecting foreign keys)
+    // First delete Slack-related tables that reference Users
+    await executeNonQuery('DELETE FROM TempUploadLinks', {});
+    await executeNonQuery('DELETE FROM SlackUsers', {});
+    
+    // Then delete user-related data
     await executeNonQuery('DELETE FROM UserDynamicFields', {});
     await executeNonQuery('DELETE FROM CVFiles', {});
     await executeNonQuery('DELETE FROM Technologies', {});
     await executeNonQuery('DELETE FROM Projects', {});
+    
+    // Finally delete users
     await executeNonQuery('DELETE FROM Users', {});
 
     return NextResponse.json({ 
