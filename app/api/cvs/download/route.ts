@@ -51,9 +51,13 @@ export async function GET(request: NextRequest) {
     const originalName = properties.metadata?.originalName || fileName
 
     // Convert stream to buffer
-    const chunks: Uint8Array[] = []
+    const chunks: Buffer[] = []
     for await (const chunk of downloadResponse.readableStreamBody) {
-      chunks.push(chunk)
+      if (typeof chunk === 'string') {
+        chunks.push(Buffer.from(chunk, 'utf8')) // Convert string chunks to Buffer
+      } else {
+        chunks.push(chunk) // chunk is already a Buffer (or Uint8Array), push directly
+      }
     }
     const buffer = Buffer.concat(chunks)
 
