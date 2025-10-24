@@ -25,17 +25,60 @@ export async function handleUploadCV({
     );
 
     if (!cvToolUserId) {
-      // No mapping exists - show user selection dropdown
+      // No mapping exists - check if there are any users
       const users = await userMappingService.getAllCVToolUsers();
 
       if (users.length === 0) {
+        // No users in database - allow CV upload to create the first user
+        const uploadLink = await tempUploadService.generateUploadLink(
+          slackUserId,
+          'cv',
+          undefined // No userId yet - CV processing will create the user
+        );
+
+        const uploadUrl = `${config.cvTool.baseUrl}/upload?type=cv&token=${uploadLink.id}`;
+
         await respond({
           response_type: 'ephemeral',
-          text: '❌ No users found in the CV Tool database. Please add users first via the web interface.',
+          text: 'Upload Your CV',
+          blocks: [
+            {
+              type: 'section',
+              text: {
+                type: 'mrkdwn',
+                text: '📄 *Upload Your CV*\n\nNo users found in the database yet. Upload your CV to create your profile automatically!',
+              },
+            },
+            {
+              type: 'actions',
+              elements: [
+                {
+                  type: 'button',
+                  text: {
+                    type: 'plain_text',
+                    text: '📤 Upload CV',
+                  },
+                  url: uploadUrl,
+                  style: 'primary',
+                },
+              ],
+            },
+            {
+              type: 'context',
+              elements: [
+                {
+                  type: 'mrkdwn',
+                  text: `⏰ Expires: <!date^${Math.floor(uploadLink.expiresAt.getTime() / 1000)}^{time}|${uploadLink.expiresAt.toISOString()}>`,
+                },
+              ],
+            },
+          ],
         });
+
         return;
       }
 
+      // Users exist but no mapping - show selection dropdown
       const options = users.slice(0, 100).map((user) => ({
         text: {
           type: 'plain_text' as const,

@@ -8,6 +8,7 @@ export async function handleUserSelectCV({
   ack,
   body,
   client,
+  respond,
 }: SlackActionMiddlewareArgs & AllMiddlewareArgs): Promise<void> {
   await ack();
 
@@ -36,10 +37,10 @@ export async function handleUserSelectCV({
 
     const uploadUrl = `${config.cvTool.baseUrl}/upload?type=cv&token=${uploadLink.id}`;
 
-    // Update the message
-    await client.chat.postEphemeral({
-      channel: body.channel?.id || '',
-      user: slackUserId,
+    // Update the message using respond
+    await respond({
+      replace_original: true,
+      text: 'Profile Linked - Upload Your CV',
       blocks: [
         {
           type: 'section',
@@ -83,6 +84,7 @@ export async function handleUserSelectProject({
   ack,
   body,
   client,
+  respond,
 }: SlackActionMiddlewareArgs & AllMiddlewareArgs): Promise<void> {
   await ack();
 
@@ -90,43 +92,29 @@ export async function handleUserSelectProject({
     if (action.type !== 'static_select') return;
 
     const selectedUserId = parseInt(action.selected_option.value, 10);
-    const blockId = (action as any).block_id as string;
-    
-    // Extract target Slack user ID from block_id (format: user_selection_project_{slackUserId})
-    const targetSlackUserId = blockId.replace('user_selection_project_', '');
-    const initiatorSlackUserId = body.user.id;
+    const slackUserId = body.user.id;
+    const selectedUserName = action.selected_option.text.text;
 
-    // Get user email from Slack
-    const userInfo = await client.users.info({ user: targetSlackUserId });
-    const slackEmail = userInfo.user?.profile?.email || null;
-    const userName = userInfo.user?.real_name || userInfo.user?.name || 'User';
-
-    // Create the mapping
-    await userMappingService.manualLink(
-      targetSlackUserId,
-      slackEmail,
-      selectedUserId
-    );
-
-    // Generate upload link
+    // Generate upload link for the selected CV Tool user
+    // No Slack user mapping needed - just upload for the selected CV Tool user
     const uploadLink = await tempUploadService.generateUploadLink(
-      initiatorSlackUserId,
+      slackUserId,
       'project',
       selectedUserId
     );
 
     const uploadUrl = `${config.cvTool.baseUrl}/upload?type=project&token=${uploadLink.id}&userId=${selectedUserId}`;
 
-    // Update the message
-    await client.chat.postEphemeral({
-      channel: body.channel?.id || '',
-      user: initiatorSlackUserId,
+    // Update the message using respond
+    await respond({
+      replace_original: true,
+      text: `User Selected: ${selectedUserName} - Upload Project`,
       blocks: [
         {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `✅ *Profile Linked for ${userName}*\n\n📁 Now you can upload project documents. Click the button below:`,
+            text: `✅ *User Selected: ${selectedUserName}*\n\n📁 Click the button below to upload project documents:`,
           },
         },
         {
@@ -163,8 +151,9 @@ export async function handleMatchVacancyButton({
   action,
   ack,
   body,
-  client,
+  respond,
 }: SlackActionMiddlewareArgs & AllMiddlewareArgs): Promise<void> {
+  // Acknowledge immediately
   await ack();
 
   try {
@@ -172,15 +161,88 @@ export async function handleMatchVacancyButton({
 
     const vacancyId = parseInt(action.value, 10);
 
-    // Trigger the match vacancy command logic
-    // This is a simplified version - in production, you'd want to refactor shared logic
-    await client.chat.postEphemeral({
-      channel: body.channel?.id || '',
-      user: body.user.id,
-      text: `Processing vacancy match for ID ${vacancyId}...`,
+    // Import cvToolApi here to avoid circular dependencies
+    const { cvToolApi } = await import('../services/cv-tool-api');
+    
+    // Show initial loading message
+    await respond({
+      replace_original: false,
+      text: `🔍 Finding candidates for vacancy #${vacancyId}...`,
+    });
+
+    // Get matched candidates
+    const { vacancy, candidates } = await cvToolApi.matchVacancy(vacancyId);
+
+    // Format candidates as Slack blocks
+    const candidateBlocks = candidates.slice(0, 10).map((candidate, index) => ({
+      type: 'section' as const,
+      text: {
+        type: 'mrkdwn' as const,
+        text: `*${index + 1}. ${candidate.name}*${candidate.score ? ` (${candidate.score.toFixed(1)}% match)` : ''}\n` +
+          `${candidate.seniority || 'N/A'} • ${candidate.yearsOfExperience || 'N/A'} years\n` +
+          `${candidate.location || 'Location N/A'}\n` +
+          `${candidate.summary ? candidate.summary.substring(0, 150) + '...' : ''}`,
+      },
+      accessory: {
+        type: 'button' as const,
+        text: {
+          type: 'plain_text' as const,
+          text: 'View Profile',
+        },
+        url: `${config.cvTool.baseUrl}/dashboard/people/${candidate.userId}`,
+      },
+    }));
+
+    // Send the results
+    await respond({
+      replace_original: false,
+      text: `Matched candidates for: ${vacancy.Title}`,
+      blocks: [
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `💼 *${vacancy.Title}*\n${vacancy.Client ? `_${vacancy.Client}_\n` : ''}${vacancy.Location || ''} ${vacancy.RemoteWork ? '🌐 Remote' : ''}`,
+          },
+        },
+        {
+          type: 'divider',
+        },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `✅ *Found ${candidates.length} Matching Candidates*`,
+          },
+        },
+        ...candidateBlocks,
+        {
+          type: 'divider',
+        },
+        {
+          type: 'actions',
+          elements: [
+            {
+              type: 'button',
+              text: {
+                type: 'plain_text',
+                text: '🌐 View Full Details',
+              },
+              url: `${config.cvTool.baseUrl}/dashboard/vacancies/${vacancyId}`,
+              style: 'primary',
+            },
+          ],
+        },
+      ],
     });
   } catch (error) {
     console.error('Error handling match vacancy button:', error);
+    
+    // Send error message
+    await respond({
+      replace_original: false,
+      text: '❌ Sorry, there was an error matching candidates. Please try again.',
+    });
   }
 }
 
