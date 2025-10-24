@@ -31,6 +31,24 @@ interface Candidate {
   projects?: string
   tools?: string[]
   languagesSpoken?: string[]
+  certifications?: string[]
+}
+
+interface EvaluatedCandidate extends Candidate {
+  overallScore: number
+  matchedRequirements: string[]
+  missingRequirements: string[]
+  reasoning: string
+  requirementBreakdown: RequirementMatch[]
+}
+
+interface RequirementMatch {
+  requirement: string
+  type: string
+  matched: boolean
+  evidence: string
+  isRequired: boolean
+  priority: number
 }
 
 const searchEndpoint = process.env.azure_search_endpoint!
@@ -53,6 +71,120 @@ function parseAzureOpenAIResource(resourceUrl: string | undefined): { resourceNa
 const { resourceName: openaiResource } = parseAzureOpenAIResource(process.env.azure_openai_resource)
 const openaiKey = process.env.azure_openai_key || ''
 const embeddingDeployment = process.env.azure_openai_embedding_deployment || 'text-embedding-ada-002'
+const gptDeployment = process.env.azure_openai_deployment || 'gpt-4o'
+
+// LLM evaluation function
+async function evaluateCandidateWithLLM(
+  candidate: Candidate,
+  requirements: Requirement[],
+  openaiClient: AzureOpenAI
+): Promise<EvaluatedCandidate> {
+  try {
+    // Build the evaluation prompt
+    const requiredReqs = requirements.filter(r => r.IsRequired)
+    const optionalReqs = requirements.filter(r => !r.IsRequired)
+    
+    const prompt = `You are evaluating if a candidate matches a job vacancy requirements.
+Be STRICT: only mark a requirement as matched if there is clear evidence in the candidate's profile.
+For technologies, semantic similarity is NOT enough - look for exact or very close matches (e.g., "React" matches "React.js" or "ReactJS").
+
+Candidate Profile:
+- Name: ${candidate.name}
+- Years of Experience: ${candidate.yearsOfExperience || 'Not specified'}
+- Seniority: ${candidate.seniority || 'Not specified'}
+- Location: ${candidate.location || 'Not specified'}
+- Skills: ${candidate.skills?.join(', ') || 'None listed'}
+- Tools: ${candidate.tools?.join(', ') || 'None listed'}
+- Certifications: ${candidate.certifications?.join(', ') || 'None listed'}
+- Preferred Roles: ${candidate.preferredRoles?.join(', ') || 'None listed'}
+- Projects: ${candidate.projects ? candidate.projects.substring(0, 1000) : 'None listed'}
+
+Required Requirements (MUST match for high score):
+${requiredReqs.map(r => `- ★ ${r.RequirementValue} (${r.RequirementType}, Priority: ${r.Priority === 1 ? 'High' : r.Priority === 2 ? 'Medium' : 'Low'})`).join('\n')}
+
+Nice-to-Have Requirements (bonus points):
+${optionalReqs.map(r => `- ☆ ${r.RequirementValue} (${r.RequirementType}, Priority: ${r.Priority === 1 ? 'High' : r.Priority === 2 ? 'Medium' : 'Low'})`).join('\n')}
+
+Scoring Guidelines:
+- Missing required requirements should significantly lower the score
+- Each matched required requirement is worth more than optional ones
+- Consider priority levels (1=High has more weight than 3=Low)
+- Overall score should be 0-100
+
+Return ONLY valid JSON in this exact format:
+{
+  "overallScore": <number 0-100>,
+  "matchedRequirements": ["<req1>", "<req2>"],
+  "missingRequirements": ["<req1>", "<req2>"],
+  "reasoning": "<brief explanation of the score>",
+  "requirementBreakdown": [
+    {
+      "requirement": "<requirement name>",
+      "type": "<requirement type>",
+      "matched": <boolean>,
+      "evidence": "<where/how it was found or why it's missing>",
+      "isRequired": <boolean>,
+      "priority": <1|2|3>
+    }
+  ]
+}`
+
+    const response = await openaiClient.chat.completions.create({
+      model: gptDeployment,
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a technical recruiter evaluating candidate-job matches. Return only valid JSON.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.1,
+      max_tokens: 2000,
+    })
+
+    let jsonText = response.choices[0]?.message?.content?.trim() || '{}'
+    
+    // Clean up markdown code blocks if present
+    if (jsonText.startsWith('```json')) {
+      jsonText = jsonText.replace(/^```json\n?/, '').replace(/\n?```$/, '')
+    } else if (jsonText.startsWith('```')) {
+      jsonText = jsonText.replace(/^```\n?/, '').replace(/\n?```$/, '')
+    }
+
+    const evaluation = JSON.parse(jsonText)
+
+    return {
+      ...candidate,
+      overallScore: evaluation.overallScore || 0,
+      matchedRequirements: evaluation.matchedRequirements || [],
+      missingRequirements: evaluation.missingRequirements || [],
+      reasoning: evaluation.reasoning || 'No reasoning provided',
+      requirementBreakdown: evaluation.requirementBreakdown || [],
+    }
+  } catch (error) {
+    console.error(`Error evaluating candidate ${candidate.userId}:`, error)
+    
+    // Fallback to vector score if LLM fails
+    return {
+      ...candidate,
+      overallScore: candidate.score ? Math.round(candidate.score * 100) : 0,
+      matchedRequirements: [],
+      missingRequirements: requirements.map(r => r.RequirementValue),
+      reasoning: 'LLM evaluation failed, using vector similarity score as fallback',
+      requirementBreakdown: requirements.map(r => ({
+        requirement: r.RequirementValue,
+        type: r.RequirementType,
+        matched: false,
+        evidence: 'Evaluation failed',
+        isRequired: r.IsRequired,
+        priority: r.Priority,
+      })),
+    }
+  }
+}
 
 export async function GET(
   request: NextRequest,
@@ -159,13 +291,28 @@ export async function GET(
       } as Candidate)
     }
 
+    console.log(`Found ${candidates.length} candidates from vector search, evaluating with LLM...`)
+
+    // Evaluate all candidates in parallel for better performance
+    const evaluationPromises = candidates.map(candidate => 
+      evaluateCandidateWithLLM(candidate, requirements, openaiClient)
+    )
+    
+    const evaluatedCandidates = await Promise.all(evaluationPromises)
+
+    // Sort by LLM score (descending) and take top 10
+    evaluatedCandidates.sort((a, b) => b.overallScore - a.overallScore)
+    const topCandidates = evaluatedCandidates.slice(0, 10)
+
+    console.log(`Evaluated ${evaluatedCandidates.length} candidates in parallel, returning top ${topCandidates.length}`)
+
     return NextResponse.json({
       success: true,
       vacancy: {
         ...vacancy,
         requirements: requirements,
       },
-      candidates: candidates,
+      candidates: topCandidates,
       searchQuery: searchText,
     })
   } catch (error) {

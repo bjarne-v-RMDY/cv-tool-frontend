@@ -114,8 +114,12 @@ export class CVToolApiService {
     vacancy: Vacancy;
     candidates: Candidate[];
   }> {
+    // Use extended timeout for LLM-based matching (up to 2 minutes)
     const response = await this.client.get(
-      `/api/vacancies/${vacancyId}/match`
+      `/api/vacancies/${vacancyId}/match`,
+      {
+        timeout: 120000, // 2 minutes
+      }
     );
     return response.data;
   }
