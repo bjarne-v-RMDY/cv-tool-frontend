@@ -29,6 +29,11 @@ features:
       description: Search for candidates using AI
       usage_hint: "your search query"
       
+    - command: /chat-clear
+      url: https://your-app-url.azurecontainerapps.io/slack/events
+      description: Clear conversation context and start fresh
+      usage_hint: ""
+      
     - command: /match-vacancy
       url: https://your-app-url.azurecontainerapps.io/slack/events
       description: Find matching candidates for a vacancy
