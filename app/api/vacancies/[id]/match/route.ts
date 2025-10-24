@@ -85,8 +85,23 @@ async function evaluateCandidateWithLLM(
     const optionalReqs = requirements.filter(r => !r.IsRequired)
     
     const prompt = `You are evaluating if a candidate matches a job vacancy requirements.
-Be STRICT: only mark a requirement as matched if there is clear evidence in the candidate's profile.
-For technologies, semantic similarity is NOT enough - look for exact or very close matches (e.g., "React" matches "React.js" or "ReactJS").
+
+IMPORTANT: Be smart about implied skills and technology relationships:
+- **Frontend Frameworks** (React, Vue, Angular, Svelte) imply: JavaScript/TypeScript, HTML, CSS, DOM manipulation, browser APIs
+- **Backend Frameworks** (Express, NestJS, Django, Flask, Spring) imply: their base language (Node.js, Python, Java), REST APIs, HTTP, databases
+- **Mobile** (React Native, Flutter) imply: their base framework (React, Dart) plus mobile-specific knowledge
+- **Full-Stack** roles imply: both frontend and backend fundamentals
+- **Senior/Lead** roles imply: the fundamentals of their specialty even if not explicitly listed
+- **Related Technologies**: Next.js implies React; Gatsby implies React; Nuxt implies Vue; Angular Material implies Angular
+
+When evaluating:
+1. If a candidate lists "React", credit them for JavaScript, HTML, CSS knowledge (even if not explicitly listed)
+2. If they list "Node.js + Express", credit them for REST API and backend fundamentals
+3. If they're "Senior Frontend Developer", assume HTML/CSS/JS fundamentals
+4. Use common sense about technology stacks and their prerequisites
+5. Still require explicit evidence for specialized tools (Docker, Kubernetes, specific databases)
+
+Be REASONABLE, not overly strict. Technology names vary (React.js = React = ReactJS).
 
 Candidate Profile:
 - Name: ${candidate.name}
