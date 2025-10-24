@@ -2,16 +2,29 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
-First, run the development server:
+### Quick Start (All Services)
+
+The easiest way to start all development services at once:
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
+./scripts/dev.sh
+```
+
+This will automatically open iTerm2 or Terminal.app with all services running:
+- 📦 Next.js Dev Server (http://localhost:3000)
+- ⚡ Azure Functions (http://localhost:7071)
+- 🤖 Slack Bot (port 3001)
+- 🌐 ngrok tunnel (for Slack webhooks)
+- 💻 General terminal
+
+See [scripts/README.md](./scripts/README.md) for more details.
+
+### Manual Start (Next.js Only)
+
+If you only want to run the Next.js app:
+
+```bash
 pnpm dev
-# or
-bun dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.

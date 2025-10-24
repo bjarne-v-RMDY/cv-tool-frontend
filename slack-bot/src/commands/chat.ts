@@ -95,19 +95,6 @@ export async function handleChat({
             text: responseText,
           },
         },
-        {
-          type: 'actions',
-          elements: [
-            {
-              type: 'button',
-              text: {
-                type: 'plain_text',
-                text: '🌐 View in Browser',
-              },
-              url: `${config.cvTool.baseUrl}/dashboard/chat`,
-            },
-          ],
-        },
       ],
     });
   } catch (error) {
