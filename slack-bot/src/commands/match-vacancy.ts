@@ -153,6 +153,15 @@ export async function handleMatchVacancy({
               type: 'button',
               text: {
                 type: 'plain_text',
+                text: '🔄 Refresh Matches',
+              },
+              value: vacancyId.toString(),
+              action_id: `refresh_vacancy_matches_${vacancyId}`,
+            },
+            {
+              type: 'button',
+              text: {
+                type: 'plain_text',
                 text: '🌐 View Full Details',
               },
               url: `${config.cvTool.baseUrl}/dashboard/vacancies/${vacancyId}`,

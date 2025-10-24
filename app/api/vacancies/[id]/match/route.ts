@@ -198,14 +198,6 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid vacancy ID' }, { status: 400 })
     }
 
-    // Check if search is configured
-    if (!searchEndpoint || !searchKey || !openaiKey || !openaiResource) {
-      return NextResponse.json(
-        { error: 'Search service not configured' },
-        { status: 503 }
-      )
-    }
-
     // Fetch vacancy details
     const vacancyQuery = `
       SELECT Id, Title, Description, Client
@@ -228,6 +220,70 @@ export async function GET(
       ORDER BY Priority ASC, IsRequired DESC
     `
     const requirements = await executeQuery<Requirement>(requirementsQuery, { vacancyId })
+
+    // Try to fetch cached matching results from database
+    const cachedMatchesQuery = `
+      SELECT 
+        m.UserId,
+        m.OverallScore,
+        m.MatchedRequirements,
+        m.MissingRequirements,
+        m.Reasoning,
+        m.RequirementBreakdown,
+        m.LastEvaluatedAt,
+        u.Name,
+        u.Email,
+        u.Location
+      FROM MatchingResults m
+      INNER JOIN Users u ON m.UserId = u.Id
+      WHERE m.AssignmentId = @vacancyId AND m.OverallScore IS NOT NULL
+      ORDER BY m.OverallScore DESC
+    `
+    
+    const cachedMatches = await executeQuery<any>(cachedMatchesQuery, { vacancyId })
+
+    if (cachedMatches.length > 0) {
+      // Return cached results
+      console.log(`Returning ${cachedMatches.length} cached matches for vacancy ${vacancyId}`)
+      
+      const candidates: EvaluatedCandidate[] = cachedMatches.slice(0, 10).map((match) => ({
+        userId: match.UserId.toString(),
+        name: match.Name || 'Unknown',
+        email: match.Email,
+        location: match.Location,
+        overallScore: match.OverallScore || 0,
+        matchedRequirements: match.MatchedRequirements ? JSON.parse(match.MatchedRequirements) : [],
+        missingRequirements: match.MissingRequirements ? JSON.parse(match.MissingRequirements) : [],
+        reasoning: match.Reasoning || '',
+        requirementBreakdown: match.RequirementBreakdown ? JSON.parse(match.RequirementBreakdown) : [],
+      }))
+
+      return NextResponse.json({
+        success: true,
+        vacancy: {
+          ...vacancy,
+          requirements: requirements,
+        },
+        candidates: candidates,
+        searchQuery: 'Cached results',
+        lastEvaluatedAt: cachedMatches[0].LastEvaluatedAt,
+        cached: true,
+      })
+    }
+
+    // If no cached results, fall back to live matching
+    console.log(`No cached results found for vacancy ${vacancyId}, performing live matching...`)
+
+    // Check if search is configured
+    if (!searchEndpoint || !searchKey || !openaiKey || !openaiResource) {
+      return NextResponse.json(
+        { 
+          error: 'No cached matches available and search service not configured',
+          message: 'Matches are being computed in the background. Please refresh in a few moments.'
+        },
+        { status: 503 }
+      )
+    }
 
     // Build search query from vacancy and requirements
     const searchText = buildSearchQuery(vacancy, requirements)

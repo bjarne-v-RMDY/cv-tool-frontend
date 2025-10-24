@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Briefcase, MapPin, Calendar, DollarSign, Loader2, User, CheckCircle2, Circle, AlertCircle, XCircle } from "lucide-react"
+import { ArrowLeft, Briefcase, MapPin, Calendar, DollarSign, Loader2, User, CheckCircle2, Circle, AlertCircle, XCircle, RefreshCw, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -63,6 +63,8 @@ interface MatchResponse {
     vacancy: Vacancy
     candidates: Candidate[]
     searchQuery: string
+    lastEvaluatedAt?: string
+    cached?: boolean
 }
 
 export default function VacancyDetailPage() {
@@ -71,27 +73,76 @@ export default function VacancyDetailPage() {
     const [data, setData] = useState<MatchResponse | null>(null)
     const [isLoading, setIsLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [isRefreshing, setIsRefreshing] = useState(false)
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                setIsLoading(true)
-                const response = await fetch(`/api/vacancies/${vacancyId}/match`)
+    const fetchData = async () => {
+        try {
+            setIsLoading(true)
+            const response = await fetch(`/api/vacancies/${vacancyId}/match`)
 
-                if (!response.ok) {
-                    throw new Error('Failed to fetch vacancy data')
+            if (!response.ok) {
+                const errorData = await response.json()
+                throw new Error(errorData.message || 'Failed to fetch vacancy data')
+            }
+
+            const result = await response.json()
+            setData(result)
+            setError(null)
+        } catch (err) {
+            console.error('Error fetching vacancy:', err)
+            setError(err instanceof Error ? err.message : 'Failed to load vacancy')
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleRefresh = async () => {
+        try {
+            setIsRefreshing(true)
+            const response = await fetch(`/api/vacancies/${vacancyId}/match/refresh`, {
+                method: 'POST',
+            })
+
+            if (!response.ok) {
+                throw new Error('Failed to refresh matches')
+            }
+
+            // Poll for updated results
+            let attempts = 0
+            const maxAttempts = 15 // Poll for 30 seconds (15 * 2s)
+            const pollInterval = setInterval(async () => {
+                attempts++
+                const pollResponse = await fetch(`/api/vacancies/${vacancyId}/match`)
+
+                if (pollResponse.ok) {
+                    const pollResult = await pollResponse.json()
+
+                    // Check if results are fresh (updated within last 30 seconds)
+                    if (pollResult.lastEvaluatedAt) {
+                        const lastEval = new Date(pollResult.lastEvaluatedAt).getTime()
+                        const now = Date.now()
+                        if (now - lastEval < 30000) {
+                            setData(pollResult)
+                            clearInterval(pollInterval)
+                            setIsRefreshing(false)
+                            return
+                        }
+                    }
                 }
 
-                const result = await response.json()
-                setData(result)
-            } catch (err) {
-                console.error('Error fetching vacancy:', err)
-                setError(err instanceof Error ? err.message : 'Failed to load vacancy')
-            } finally {
-                setIsLoading(false)
-            }
+                if (attempts >= maxAttempts) {
+                    clearInterval(pollInterval)
+                    setIsRefreshing(false)
+                }
+            }, 2000)
+        } catch (err) {
+            console.error('Error refreshing matches:', err)
+            setError(err instanceof Error ? err.message : 'Failed to refresh matches')
+            setIsRefreshing(false)
         }
+    }
 
+    useEffect(() => {
         if (vacancyId) {
             fetchData()
         }
@@ -149,6 +200,42 @@ export default function VacancyDetailPage() {
         }
     }
 
+    // Calculate time since last evaluation
+    const getTimeSinceEvaluation = () => {
+        if (!data.lastEvaluatedAt) return null
+
+        const lastEval = new Date(data.lastEvaluatedAt).getTime()
+        const now = Date.now()
+        const diffMinutes = Math.floor((now - lastEval) / (1000 * 60))
+
+        if (diffMinutes < 1) return 'just now'
+        if (diffMinutes < 60) return `${diffMinutes} minute${diffMinutes !== 1 ? 's' : ''} ago`
+
+        const diffHours = Math.floor(diffMinutes / 60)
+        return `${diffHours} hour${diffHours !== 1 ? 's' : ''} ago`
+    }
+
+    const getMatchFreshness = () => {
+        if (!data.lastEvaluatedAt) {
+            return { color: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-400', icon: AlertCircle }
+        }
+
+        const lastEval = new Date(data.lastEvaluatedAt).getTime()
+        const now = Date.now()
+        const diffHours = (now - lastEval) / (1000 * 60 * 60)
+
+        if (diffHours < 1) {
+            return { color: 'bg-green-100 text-green-800 dark:bg-green-950 dark:text-green-400', icon: CheckCircle2 }
+        } else if (diffHours < 24) {
+            return { color: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-400', icon: Clock }
+        } else {
+            return { color: 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-400', icon: AlertCircle }
+        }
+    }
+
+    const freshness = getMatchFreshness()
+    const FreshnessIcon = freshness.icon
+
     return (
         <div className="flex flex-col h-full">
             {/* Fixed Header */}
@@ -160,10 +247,32 @@ export default function VacancyDetailPage() {
                         </Button>
                     </Link>
                     <div className="flex-1">
-                        <h1 className="text-2xl md:text-3xl font-bold">{vacancy.Title}</h1>
-                        {vacancy.Client && (
-                            <p className="text-lg text-muted-foreground mt-1">{vacancy.Client}</p>
-                        )}
+                        <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1">
+                                <h1 className="text-2xl md:text-3xl font-bold">{vacancy.Title}</h1>
+                                {vacancy.Client && (
+                                    <p className="text-lg text-muted-foreground mt-1">{vacancy.Client}</p>
+                                )}
+                            </div>
+                            <div className="flex items-center gap-2">
+                                {data.lastEvaluatedAt && (
+                                    <Badge variant="secondary" className={`gap-1 ${freshness.color}`}>
+                                        <FreshnessIcon className="h-3 w-3" />
+                                        {getTimeSinceEvaluation()}
+                                    </Badge>
+                                )}
+                                <Button
+                                    onClick={handleRefresh}
+                                    disabled={isRefreshing}
+                                    size="sm"
+                                    variant="outline"
+                                    className="gap-2"
+                                >
+                                    <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+                                    {isRefreshing ? 'Refreshing...' : 'Refresh Matches'}
+                                </Button>
+                            </div>
+                        </div>
                         <div className="flex flex-wrap gap-2 mt-3">
                             {vacancy.RemoteWork && (
                                 <Badge variant="secondary">Remote</Badge>
