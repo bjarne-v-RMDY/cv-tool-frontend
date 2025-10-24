@@ -12,6 +12,9 @@
 /azure/.secrets
 /azure/deploy.zip
 /azure/local.settings.json
+/slack-bot/node_modules
+/slack-bot/dist
+/slack-bot/.env
 /.pnp
 .pnp.*
 .yarn/*
