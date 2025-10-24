@@ -85,8 +85,23 @@ async function evaluateCandidateWithLLM(
     const optionalReqs = requirements.filter(r => !r.IsRequired)
     
     const prompt = `You are evaluating if a candidate matches a job vacancy requirements.
-Be STRICT: only mark a requirement as matched if there is clear evidence in the candidate's profile.
-For technologies, semantic similarity is NOT enough - look for exact or very close matches (e.g., "React" matches "React.js" or "ReactJS").
+
+IMPORTANT: Be smart about implied skills and technology relationships:
+- **Frontend Frameworks** (React, Vue, Angular, Svelte) imply: JavaScript/TypeScript, HTML, CSS, DOM manipulation, browser APIs
+- **Backend Frameworks** (Express, NestJS, Django, Flask, Spring) imply: their base language (Node.js, Python, Java), REST APIs, HTTP, databases
+- **Mobile** (React Native, Flutter) imply: their base framework (React, Dart) plus mobile-specific knowledge
+- **Full-Stack** roles imply: both frontend and backend fundamentals
+- **Senior/Lead** roles imply: the fundamentals of their specialty even if not explicitly listed
+- **Related Technologies**: Next.js implies React; Gatsby implies React; Nuxt implies Vue; Angular Material implies Angular
+
+When evaluating:
+1. If a candidate lists "React", credit them for JavaScript, HTML, CSS knowledge (even if not explicitly listed)
+2. If they list "Node.js + Express", credit them for REST API and backend fundamentals
+3. If they're "Senior Frontend Developer", assume HTML/CSS/JS fundamentals
+4. Use common sense about technology stacks and their prerequisites
+5. Still require explicit evidence for specialized tools (Docker, Kubernetes, specific databases)
+
+Be REASONABLE, not overly strict. Technology names vary (React.js = React = ReactJS).
 
 Candidate Profile:
 - Name: ${candidate.name}
@@ -198,14 +213,6 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid vacancy ID' }, { status: 400 })
     }
 
-    // Check if search is configured
-    if (!searchEndpoint || !searchKey || !openaiKey || !openaiResource) {
-      return NextResponse.json(
-        { error: 'Search service not configured' },
-        { status: 503 }
-      )
-    }
-
     // Fetch vacancy details
     const vacancyQuery = `
       SELECT Id, Title, Description, Client
@@ -228,6 +235,70 @@ export async function GET(
       ORDER BY Priority ASC, IsRequired DESC
     `
     const requirements = await executeQuery<Requirement>(requirementsQuery, { vacancyId })
+
+    // Try to fetch cached matching results from database
+    const cachedMatchesQuery = `
+      SELECT 
+        m.UserId,
+        m.OverallScore,
+        m.MatchedRequirements,
+        m.MissingRequirements,
+        m.Reasoning,
+        m.RequirementBreakdown,
+        m.LastEvaluatedAt,
+        u.Name,
+        u.Email,
+        u.Location
+      FROM MatchingResults m
+      INNER JOIN Users u ON m.UserId = u.Id
+      WHERE m.AssignmentId = @vacancyId AND m.OverallScore IS NOT NULL
+      ORDER BY m.OverallScore DESC
+    `
+    
+    const cachedMatches = await executeQuery<any>(cachedMatchesQuery, { vacancyId })
+
+    if (cachedMatches.length > 0) {
+      // Return cached results
+      console.log(`Returning ${cachedMatches.length} cached matches for vacancy ${vacancyId}`)
+      
+      const candidates: EvaluatedCandidate[] = cachedMatches.slice(0, 10).map((match) => ({
+        userId: match.UserId.toString(),
+        name: match.Name || 'Unknown',
+        email: match.Email,
+        location: match.Location,
+        overallScore: match.OverallScore || 0,
+        matchedRequirements: match.MatchedRequirements ? JSON.parse(match.MatchedRequirements) : [],
+        missingRequirements: match.MissingRequirements ? JSON.parse(match.MissingRequirements) : [],
+        reasoning: match.Reasoning || '',
+        requirementBreakdown: match.RequirementBreakdown ? JSON.parse(match.RequirementBreakdown) : [],
+      }))
+
+      return NextResponse.json({
+        success: true,
+        vacancy: {
+          ...vacancy,
+          requirements: requirements,
+        },
+        candidates: candidates,
+        searchQuery: 'Cached results',
+        lastEvaluatedAt: cachedMatches[0].LastEvaluatedAt,
+        cached: true,
+      })
+    }
+
+    // If no cached results, fall back to live matching
+    console.log(`No cached results found for vacancy ${vacancyId}, performing live matching...`)
+
+    // Check if search is configured
+    if (!searchEndpoint || !searchKey || !openaiKey || !openaiResource) {
+      return NextResponse.json(
+        { 
+          error: 'No cached matches available and search service not configured',
+          message: 'Matches are being computed in the background. Please refresh in a few moments.'
+        },
+        { status: 503 }
+      )
+    }
 
     // Build search query from vacancy and requirements
     const searchText = buildSearchQuery(vacancy, requirements)

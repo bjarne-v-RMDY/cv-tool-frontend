@@ -16,6 +16,7 @@ import {
   handleUserSelectCV,
   handleUserSelectProject,
   handleMatchVacancyButton,
+  handleRefreshVacancyMatches,
 } from './interactions/user-select';
 
 // Validate configuration
@@ -55,6 +56,7 @@ app.command('/link-user', handleLinkUser);
 app.action('select_user_cv', handleUserSelectCV);
 app.action('select_user_project', handleUserSelectProject);
 app.action(/^match_vacancy_/, handleMatchVacancyButton);
+app.action(/^refresh_vacancy_matches_/, handleRefreshVacancyMatches);
 
 // Cleanup job for expired upload links (runs every 5 minutes)
 setInterval(async () => {

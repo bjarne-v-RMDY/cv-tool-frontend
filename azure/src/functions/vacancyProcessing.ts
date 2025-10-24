@@ -296,6 +296,38 @@ ${vacancyText}`;
 
             await pool.close();
 
+            // Queue vacancy matching job
+            if (assignmentId) {
+                try {
+                    const { QueueServiceClient } = require('@azure/storage-queue');
+                    const queueServiceClient = QueueServiceClient.fromConnectionString(storageConnection);
+                    const matchingQueueClient = queueServiceClient.getQueueClient('vacancy-matching-queue');
+                    
+                    // Ensure queue exists
+                    await matchingQueueClient.createIfNotExists();
+                    
+                    // Add message to queue
+                    const message = JSON.stringify({ vacancyId: assignmentId });
+                    await matchingQueueClient.sendMessage(Buffer.from(message).toString('base64'));
+                    
+                    context.log(`Vacancy matching queued for vacancy ID ${assignmentId}`);
+                    
+                    await addActivityLog(
+                        'processing',
+                        'Vacancy Matching Queued',
+                        `Queued candidate matching for vacancy "${analysisResult?.vacancy?.title}"`,
+                        'processing',
+                        {
+                            assignmentId,
+                            vacancyTitle: analysisResult?.vacancy?.title
+                        }
+                    );
+                } catch (queueError) {
+                    context.error('Error queuing vacancy matching:', queueError);
+                    // Don't fail the whole process if queuing fails
+                }
+            }
+
             // Log success
             await addActivityLog(
                 'processing',
