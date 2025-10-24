@@ -167,31 +167,50 @@ export async function handleMatchVacancyButton({
     // Show initial loading message
     await respond({
       replace_original: false,
-      text: `🔍 Finding candidates for vacancy #${vacancyId}...`,
+      text: `🔍 Finding and evaluating candidates for vacancy #${vacancyId}...\n_This may take up to a minute as we analyze each candidate with AI._`,
     });
 
     // Get matched candidates
     const { vacancy, candidates } = await cvToolApi.matchVacancy(vacancyId);
 
-    // Format candidates as Slack blocks
-    const candidateBlocks = candidates.slice(0, 10).map((candidate, index) => ({
-      type: 'section' as const,
-      text: {
-        type: 'mrkdwn' as const,
-        text: `*${index + 1}. ${candidate.name}*${candidate.score ? ` (${candidate.score.toFixed(1)}% match)` : ''}\n` +
-          `${candidate.seniority || 'N/A'} • ${candidate.yearsOfExperience || 'N/A'} years\n` +
-          `${candidate.location || 'Location N/A'}\n` +
-          `${candidate.summary ? candidate.summary.substring(0, 150) + '...' : ''}`,
-      },
-      accessory: {
-        type: 'button' as const,
+    // Format candidates as Slack blocks with enhanced match info
+    const candidateBlocks = candidates.slice(0, 10).map((candidate, index) => {
+      const matchScore = (candidate as any).overallScore ?? (candidate.score ? Math.round(candidate.score * 100) : 0)
+      const scoreEmoji = matchScore >= 80 ? '🟢' : matchScore >= 60 ? '🟡' : '🔴'
+      
+      const matchedReqs = (candidate as any).matchedRequirements || []
+      const missingReqs = (candidate as any).missingRequirements || []
+      const reasoning = (candidate as any).reasoning || ''
+      
+      let matchDetails = ''
+      if (matchedReqs.length > 0) {
+        matchDetails += `✅ *Matched:* ${matchedReqs.slice(0, 3).join(', ')}${matchedReqs.length > 3 ? ` (+${matchedReqs.length - 3} more)` : ''}\n`
+      }
+      if (missingReqs.length > 0) {
+        matchDetails += `❌ *Missing:* ${missingReqs.slice(0, 3).join(', ')}${missingReqs.length > 3 ? ` (+${missingReqs.length - 3} more)` : ''}\n`
+      }
+      if (reasoning) {
+        matchDetails += `💡 _${reasoning.substring(0, 120)}${reasoning.length > 120 ? '...' : ''}_\n`
+      }
+      
+      return {
+        type: 'section' as const,
         text: {
-          type: 'plain_text' as const,
-          text: 'View Profile',
+          type: 'mrkdwn' as const,
+          text: `*${index + 1}. ${candidate.name}* ${scoreEmoji} *${matchScore}% match*\n` +
+            `${candidate.seniority || 'N/A'} • ${candidate.yearsOfExperience || 'N/A'} years • ${candidate.location || 'Location N/A'}\n` +
+            (matchDetails || `${candidate.summary ? candidate.summary.substring(0, 100) + '...' : ''}`),
         },
-        url: `${config.cvTool.baseUrl}/dashboard/people/${candidate.userId}`,
-      },
-    }));
+        accessory: {
+          type: 'button' as const,
+          text: {
+            type: 'plain_text' as const,
+            text: 'View Profile',
+          },
+          url: `${config.cvTool.baseUrl}/dashboard/people/${candidate.userId}`,
+        },
+      }
+    });
 
     // Send the results
     await respond({

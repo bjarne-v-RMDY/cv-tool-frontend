@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import Link from "next/link"
-import { ArrowLeft, Briefcase, MapPin, Calendar, DollarSign, Loader2, User, CheckCircle2, Circle } from "lucide-react"
+import { ArrowLeft, Briefcase, MapPin, Calendar, DollarSign, Loader2, User, CheckCircle2, Circle, AlertCircle, XCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -29,6 +29,15 @@ interface Vacancy {
     requirements: Requirement[]
 }
 
+interface RequirementMatch {
+    requirement: string
+    type: string
+    matched: boolean
+    evidence: string
+    isRequired: boolean
+    priority: number
+}
+
 interface Candidate {
     score?: number
     userId: string
@@ -42,6 +51,11 @@ interface Candidate {
     preferredRoles?: string[]
     tools?: string[]
     languagesSpoken?: string[]
+    overallScore?: number
+    matchedRequirements?: string[]
+    missingRequirements?: string[]
+    reasoning?: string
+    requirementBreakdown?: RequirementMatch[]
 }
 
 interface MatchResponse {
@@ -63,11 +77,11 @@ export default function VacancyDetailPage() {
             try {
                 setIsLoading(true)
                 const response = await fetch(`/api/vacancies/${vacancyId}/match`)
-                
+
                 if (!response.ok) {
                     throw new Error('Failed to fetch vacancy data')
                 }
-                
+
                 const result = await response.json()
                 setData(result)
             } catch (err) {
@@ -250,7 +264,7 @@ export default function VacancyDetailPage() {
                                     Matched Candidates
                                 </CardTitle>
                                 <CardDescription>
-                                    {candidates.length > 0 
+                                    {candidates.length > 0
                                         ? `Found ${candidates.length} matching candidate${candidates.length !== 1 ? 's' : ''}`
                                         : 'No matching candidates found'
                                     }
@@ -259,68 +273,143 @@ export default function VacancyDetailPage() {
                             <CardContent>
                                 {candidates.length > 0 ? (
                                     <div className="space-y-4">
-                                        {candidates.map((candidate) => (
-                                            <Link
-                                                key={candidate.userId}
-                                                href={`/dashboard/people/${candidate.userId}`}
-                                                className="block"
-                                            >
-                                                <div className="rounded-lg border p-4 hover:bg-muted/50 transition-colors cursor-pointer">
-                                                    <div className="flex items-start justify-between gap-3">
-                                                        <div className="flex-1">
-                                                            <div className="flex items-center gap-2 mb-1">
-                                                                <h4 className="font-semibold">{candidate.name}</h4>
-                                                                {candidate.score && (
-                                                                    <Badge variant="secondary" className="text-xs">
-                                                                        {Math.round(candidate.score * 100)}% match
+                                        {candidates.map((candidate) => {
+                                            const matchScore = candidate.overallScore ?? (candidate.score ? Math.round(candidate.score * 100) : 0)
+                                            const getScoreColor = (score: number) => {
+                                                if (score >= 80) return 'text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-950'
+                                                if (score >= 60) return 'text-yellow-600 dark:text-yellow-400 bg-yellow-50 dark:bg-yellow-950'
+                                                return 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950'
+                                            }
+
+                                            return (
+                                                <div
+                                                    key={candidate.userId}
+                                                    className="rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+                                                >
+                                                    <Link
+                                                        href={`/dashboard/people/${candidate.userId}`}
+                                                        className="block"
+                                                    >
+                                                        <div className="flex items-start justify-between gap-3 mb-3">
+                                                            <div className="flex-1">
+                                                                <div className="flex items-center gap-2 mb-1">
+                                                                    <h4 className="font-semibold">{candidate.name}</h4>
+                                                                    <Badge className={`text-xs ${getScoreColor(matchScore)}`}>
+                                                                        {matchScore}% match
                                                                     </Badge>
+                                                                </div>
+                                                                {candidate.email && (
+                                                                    <p className="text-sm text-muted-foreground">{candidate.email}</p>
                                                                 )}
-                                                            </div>
-                                                            {candidate.email && (
-                                                                <p className="text-sm text-muted-foreground">{candidate.email}</p>
-                                                            )}
-                                                            {candidate.summary && (
-                                                                <p className="text-sm text-muted-foreground mt-2 line-clamp-2">
-                                                                    {candidate.summary}
-                                                                </p>
-                                                            )}
-                                                            <div className="flex flex-wrap gap-2 mt-3">
-                                                                {candidate.seniority && (
-                                                                    <Badge variant="outline" className="capitalize">
-                                                                        {candidate.seniority}
-                                                                    </Badge>
-                                                                )}
-                                                                {candidate.yearsOfExperience !== undefined && (
-                                                                    <Badge variant="outline">
-                                                                        {candidate.yearsOfExperience}+ years
-                                                                    </Badge>
-                                                                )}
-                                                                {candidate.location && (
-                                                                    <Badge variant="outline" className="gap-1">
-                                                                        <MapPin className="h-3 w-3" />
-                                                                        {candidate.location}
-                                                                    </Badge>
-                                                                )}
-                                                            </div>
-                                                            {candidate.skills && candidate.skills.length > 0 && (
-                                                                <div className="flex flex-wrap gap-1 mt-3">
-                                                                    {candidate.skills.slice(0, 6).map((skill, idx) => (
-                                                                        <Badge key={idx} variant="secondary" className="text-xs">
-                                                                            {skill}
+                                                                <div className="flex flex-wrap gap-2 mt-2">
+                                                                    {candidate.seniority && (
+                                                                        <Badge variant="outline" className="capitalize">
+                                                                            {candidate.seniority}
                                                                         </Badge>
-                                                                    ))}
-                                                                    {candidate.skills.length > 6 && (
-                                                                        <Badge variant="secondary" className="text-xs">
-                                                                            +{candidate.skills.length - 6} more
+                                                                    )}
+                                                                    {candidate.yearsOfExperience !== undefined && (
+                                                                        <Badge variant="outline">
+                                                                            {candidate.yearsOfExperience}+ years
+                                                                        </Badge>
+                                                                    )}
+                                                                    {candidate.location && (
+                                                                        <Badge variant="outline" className="gap-1">
+                                                                            <MapPin className="h-3 w-3" />
+                                                                            {candidate.location}
                                                                         </Badge>
                                                                     )}
                                                                 </div>
+                                                            </div>
+                                                        </div>
+                                                    </Link>
+
+                                                    {/* Match Details */}
+                                                    {candidate.reasoning && (
+                                                        <div className="mb-3 p-3 bg-muted/50 rounded text-sm">
+                                                            <p className="text-muted-foreground italic">{candidate.reasoning}</p>
+                                                        </div>
+                                                    )}
+
+                                                    {/* Matched and Missing Requirements */}
+                                                    {(candidate.matchedRequirements || candidate.missingRequirements) && (
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
+                                                            {candidate.matchedRequirements && candidate.matchedRequirements.length > 0 && (
+                                                                <div className="space-y-1">
+                                                                    <h5 className="text-xs font-medium text-green-600 dark:text-green-400 flex items-center gap-1">
+                                                                        <CheckCircle2 className="h-3 w-3" />
+                                                                        Matched ({candidate.matchedRequirements.length})
+                                                                    </h5>
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {candidate.matchedRequirements.slice(0, 5).map((req, idx) => (
+                                                                            <Badge key={idx} variant="outline" className="text-xs border-green-200 dark:border-green-800">
+                                                                                {req}
+                                                                            </Badge>
+                                                                        ))}
+                                                                        {candidate.matchedRequirements.length > 5 && (
+                                                                            <Badge variant="outline" className="text-xs">
+                                                                                +{candidate.matchedRequirements.length - 5}
+                                                                            </Badge>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                            )}
+                                                            {candidate.missingRequirements && candidate.missingRequirements.length > 0 && (
+                                                                <div className="space-y-1">
+                                                                    <h5 className="text-xs font-medium text-red-600 dark:text-red-400 flex items-center gap-1">
+                                                                        <XCircle className="h-3 w-3" />
+                                                                        Missing ({candidate.missingRequirements.length})
+                                                                    </h5>
+                                                                    <div className="flex flex-wrap gap-1">
+                                                                        {candidate.missingRequirements.slice(0, 5).map((req, idx) => (
+                                                                            <Badge key={idx} variant="outline" className="text-xs border-red-200 dark:border-red-800">
+                                                                                {req}
+                                                                            </Badge>
+                                                                        ))}
+                                                                        {candidate.missingRequirements.length > 5 && (
+                                                                            <Badge variant="outline" className="text-xs">
+                                                                                +{candidate.missingRequirements.length - 5}
+                                                                            </Badge>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
                                                             )}
                                                         </div>
-                                                    </div>
+                                                    )}
+
+                                                    {/* Requirement Breakdown Details */}
+                                                    {candidate.requirementBreakdown && candidate.requirementBreakdown.length > 0 && (
+                                                        <details className="text-sm">
+                                                            <summary className="cursor-pointer text-xs text-muted-foreground hover:text-foreground transition-colors">
+                                                                View detailed requirement breakdown
+                                                            </summary>
+                                                            <div className="mt-2 space-y-2 pl-2 border-l-2">
+                                                                {candidate.requirementBreakdown.map((reqMatch, idx) => (
+                                                                    <div key={idx} className="flex items-start gap-2">
+                                                                        {reqMatch.matched ? (
+                                                                            <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                                                                        ) : (
+                                                                            <XCircle className="h-4 w-4 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                                                                        )}
+                                                                        <div className="flex-1">
+                                                                            <div className="flex items-center gap-2">
+                                                                                <span className={`font-medium ${reqMatch.matched ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                                                                                    {reqMatch.requirement}
+                                                                                </span>
+                                                                                {reqMatch.isRequired && (
+                                                                                    <Badge variant="destructive" className="text-xs">Required</Badge>
+                                                                                )}
+                                                                                <Badge variant="outline" className="text-xs">{reqMatch.type}</Badge>
+                                                                            </div>
+                                                                            <p className="text-xs text-muted-foreground mt-1">{reqMatch.evidence}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                ))}
+                                                            </div>
+                                                        </details>
+                                                    )}
                                                 </div>
-                                            </Link>
-                                        ))}
+                                            )
+                                        })}
                                     </div>
                                 ) : (
                                     <div className="text-center py-8 text-muted-foreground">
