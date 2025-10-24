@@ -168,7 +168,7 @@ export async function handleMatchVacancyButton({
   await ack();
 
   try {
-    if (action.type !== 'button') return;
+    if (action.type !== 'button' || !action.value) return;
 
     const vacancyId = parseInt(action.value, 10);
 

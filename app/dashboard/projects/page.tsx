@@ -39,7 +39,7 @@ interface Project {
 }
 
 export default function ProjectsPage() {
-    const [files, setFiles] = useState<File[]>([])
+    const [file, setFile] = useState<File | null>(null)
     const [isDragOver, setIsDragOver] = useState(false)
     const [isUploading, setIsUploading] = useState(false)
     const [uploadResults, setUploadResults] = useState<UploadResult[]>([])
@@ -69,21 +69,24 @@ export default function ProjectsPage() {
                 file.name.endsWith('.pdf') || file.name.endsWith('.txt')
         )
 
-        setFiles(prev => [...prev, ...droppedFiles])
-    }, [])
-
-    const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            const selectedFiles = Array.from(e.target.files).filter(
-                file => file.type === "application/pdf" || file.type === "text/plain" ||
-                    file.name.endsWith('.pdf') || file.name.endsWith('.txt')
-            )
-            setFiles(prev => [...prev, ...selectedFiles])
+        // Only take the first file
+        if (droppedFiles.length > 0) {
+            setFile(droppedFiles[0])
         }
     }, [])
 
-    const removeFile = useCallback((index: number) => {
-        setFiles(prev => prev.filter((_, i) => i !== index))
+    const handleFileSelect = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files && e.target.files.length > 0) {
+            const selectedFile = e.target.files[0]
+            if (selectedFile.type === "application/pdf" || selectedFile.type === "text/plain" ||
+                selectedFile.name.endsWith('.pdf') || selectedFile.name.endsWith('.txt')) {
+                setFile(selectedFile)
+            }
+        }
+    }, [])
+
+    const removeFile = useCallback(() => {
+        setFile(null)
     }, [])
 
     const fetchPeople = useCallback(async () => {
@@ -122,7 +125,7 @@ export default function ProjectsPage() {
     }, [])
 
     const handleUpload = useCallback(async () => {
-        if (files.length === 0 || !selectedUserId) return
+        if (!file || !selectedUserId) return
 
         setIsUploading(true)
         setUploadResults([])
@@ -130,9 +133,7 @@ export default function ProjectsPage() {
 
         try {
             const formData = new FormData()
-            files.forEach(file => {
-                formData.append('files', file)
-            })
+            formData.append('files', file)
             formData.append('userId', selectedUserId)
 
             const response = await fetch('/api/projects/upload', {
@@ -145,7 +146,7 @@ export default function ProjectsPage() {
             if (response.ok) {
                 setUploadResults(result.uploadedFiles || [])
                 setUploadErrors(result.errors || [])
-                setFiles([]) // Clear files after successful upload
+                setFile(null) // Clear file after successful upload
                 fetchProjects(selectedUserId) // Refresh project list
             } else {
                 setUploadErrors([{ fileName: 'Upload failed', error: result.error || 'Unknown error' }])
@@ -156,7 +157,7 @@ export default function ProjectsPage() {
         } finally {
             setIsUploading(false)
         }
-    }, [files, selectedUserId, fetchProjects])
+    }, [file, selectedUserId, fetchProjects])
 
     useEffect(() => {
         fetchPeople()
@@ -264,10 +265,10 @@ export default function ProjectsPage() {
                                     </div>
                                     <div className="space-y-1 sm:space-y-2">
                                         <p className="text-base sm:text-lg font-medium">
-                                            Drag and drop project files here
+                                            Drag and drop project file here
                                         </p>
                                         <p className="text-xs sm:text-sm text-muted-foreground">
-                                            or click to browse files
+                                            or click to browse
                                         </p>
                                     </div>
                                     <Button asChild variant="outline" size="sm" className="sm:size-default">
@@ -275,56 +276,48 @@ export default function ProjectsPage() {
                                             <input
                                                 id="file-upload"
                                                 type="file"
-                                                multiple
                                                 accept=".pdf,.txt,application/pdf,text/plain"
                                                 onChange={handleFileSelect}
                                                 className="hidden"
                                             />
-                                            Choose Files
+                                            Choose File
                                         </label>
                                     </Button>
                                     <p className="text-xs text-muted-foreground">
-                                        PDF and TXT files containing project information
+                                        PDF or TXT file containing project information
                                     </p>
                                 </div>
                             </div>
 
-                            {/* File List */}
-                            {files.length > 0 && (
+                            {/* File Preview */}
+                            {file && (
                                 <div className="space-y-2">
-                                    <h3 className="text-base sm:text-lg font-medium">Selected Files</h3>
-                                    <div className="space-y-2">
-                                        {files.map((file, index) => (
-                                            <div
-                                                key={`${file.name}-${index}`}
-                                                className="flex items-center gap-2 sm:gap-3 rounded-lg border p-2 sm:p-3"
-                                            >
-                                                <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-xs sm:text-sm font-medium truncate">
-                                                        {file.name}
-                                                    </p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {(file.size / 1024).toFixed(1)} KB
-                                                    </p>
-                                                </div>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    onClick={() => removeFile(index)}
-                                                    className="h-8 w-8 flex-shrink-0"
-                                                >
-                                                    <X className="h-4 w-4" />
-                                                </Button>
-                                            </div>
-                                        ))}
+                                    <h3 className="text-base sm:text-lg font-medium">Selected File</h3>
+                                    <div className="flex items-center gap-2 sm:gap-3 rounded-lg border p-2 sm:p-3">
+                                        <FileText className="h-4 w-4 sm:h-5 sm:w-5 text-muted-foreground flex-shrink-0" />
+                                        <div className="flex-1 min-w-0">
+                                            <p className="text-xs sm:text-sm font-medium truncate">
+                                                {file.name}
+                                            </p>
+                                            <p className="text-xs text-muted-foreground">
+                                                {(file.size / 1024).toFixed(1)} KB
+                                            </p>
+                                        </div>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={removeFile}
+                                            className="h-8 w-8 flex-shrink-0"
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
                                     </div>
 
                                     {/* Upload Button */}
                                     <div className="pt-4">
                                         <Button
                                             onClick={handleUpload}
-                                            disabled={isUploading || files.length === 0 || !selectedUserId}
+                                            disabled={isUploading || !file || !selectedUserId}
                                             className="w-full"
                                         >
                                             {isUploading ? (
@@ -335,7 +328,7 @@ export default function ProjectsPage() {
                                             ) : (
                                                 <>
                                                     <Upload className="h-4 w-4 mr-2" />
-                                                    Upload {files.length} file{files.length !== 1 ? 's' : ''}
+                                                    Upload Project
                                                 </>
                                             )}
                                         </Button>

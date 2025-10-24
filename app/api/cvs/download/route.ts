@@ -38,9 +38,8 @@ export async function GET(request: NextRequest) {
 
     // Download the blob
     const downloadResponse = await blockBlobClient.download()
-    const blob = await downloadResponse.blobBody
-
-    if (!blob) {
+    
+    if (!downloadResponse.readableStreamBody) {
       return NextResponse.json(
         { error: 'Failed to download file' },
         { status: 500 }
@@ -51,8 +50,12 @@ export async function GET(request: NextRequest) {
     const properties = await blockBlobClient.getProperties()
     const originalName = properties.metadata?.originalName || fileName
 
-    // Convert blob to buffer
-    const buffer = await blob.arrayBuffer()
+    // Convert stream to buffer
+    const chunks: Uint8Array[] = []
+    for await (const chunk of downloadResponse.readableStreamBody) {
+      chunks.push(chunk)
+    }
+    const buffer = Buffer.concat(chunks)
 
     // Return file as download
     return new NextResponse(buffer, {
