@@ -51,6 +51,19 @@ interface RequirementMatch {
   priority: number
 }
 
+interface CachedMatchResult {
+  UserId: number
+  OverallScore: number
+  MatchedRequirements: string
+  MissingRequirements: string
+  Reasoning: string
+  RequirementBreakdown: string
+  LastEvaluatedAt: string
+  Name: string
+  Email: string
+  Location: string
+}
+
 const searchEndpoint = process.env.azure_search_endpoint!
 const searchKey = process.env.azure_search_key!
 const indexName = 'cv-candidates'
@@ -255,7 +268,7 @@ export async function GET(
       ORDER BY m.OverallScore DESC
     `
     
-    const cachedMatches = await executeQuery<any>(cachedMatchesQuery, { vacancyId })
+    const cachedMatches = await executeQuery<CachedMatchResult>(cachedMatchesQuery, { vacancyId })
 
     if (cachedMatches.length > 0) {
       // Return cached results
