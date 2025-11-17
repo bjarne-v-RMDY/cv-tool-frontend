@@ -25,22 +25,40 @@ export async function handleMatchVacancy({
         return;
       }
 
-      const vacancyBlocks = vacancies.slice(0, 10).map((vacancy) => ({
-        type: 'section' as const,
-        text: {
-          type: 'mrkdwn' as const,
-          text: `*${vacancy.Title}*\n${vacancy.Client ? `_${vacancy.Client}_\n` : ''}${vacancy.Description.substring(0, 100)}...`,
-        },
-        accessory: {
-          type: 'button' as const,
+      const vacancyBlocks = vacancies.slice(0, 10).flatMap((vacancy) => [
+        {
+          type: 'section' as const,
           text: {
-            type: 'plain_text' as const,
-            text: 'Match Candidates',
+            type: 'mrkdwn' as const,
+            text: `*${vacancy.Title}*\n${vacancy.Client ? `_${vacancy.Client}_\n` : ''}${vacancy.Description.substring(0, 100)}...`,
           },
-          value: vacancy.Id.toString(),
-          action_id: `match_vacancy_${vacancy.Id}`,
         },
-      }));
+        {
+          type: 'actions' as const,
+          elements: [
+            {
+              type: 'button' as const,
+              text: {
+                type: 'plain_text' as const,
+                text: 'Match Candidates',
+              },
+              value: vacancy.Id.toString(),
+              action_id: `match_vacancy_${vacancy.Id}`,
+              style: 'primary' as const,
+            },
+            {
+              type: 'button' as const,
+              text: {
+                type: 'plain_text' as const,
+                text: 'Delete',
+              },
+              value: vacancy.Id.toString(),
+              action_id: `delete_vacancy_${vacancy.Id}`,
+              style: 'danger' as const,
+            },
+          ],
+        },
+      ]);
 
       await respond({
         response_type: 'ephemeral',

@@ -21,6 +21,7 @@ import {
   handleRefreshVacancyMatches,
 } from './interactions/user-select';
 import { handleClearChatContext } from './interactions/clear-context';
+import { handleDeleteVacancy } from './interactions/vacancy-delete';
 
 // Validate configuration
 try {
@@ -61,6 +62,7 @@ app.action('select_user_cv', handleUserSelectCV);
 app.action('select_user_project', handleUserSelectProject);
 app.action(/^match_vacancy_/, handleMatchVacancyButton);
 app.action(/^refresh_vacancy_matches_/, handleRefreshVacancyMatches);
+app.action(/^delete_vacancy_/, handleDeleteVacancy);
 app.action('clear_chat_context', handleClearChatContext);
 
 // Cleanup job for expired upload links (runs every 5 minutes)
