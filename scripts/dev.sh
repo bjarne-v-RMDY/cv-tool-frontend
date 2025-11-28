@@ -7,7 +7,7 @@
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 # Check if iTerm2 is installed and running or available
-if [ -d "/Applications/iTerm.app" ]; then
+if [ -d "/Applications/iTerm 2.app" ]; then
     echo "🎯 Detected iTerm2, using split-pane layout..."
     "$SCRIPT_DIR/dev-start.sh"
 else
