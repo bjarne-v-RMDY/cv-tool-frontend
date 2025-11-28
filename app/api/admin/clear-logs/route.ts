@@ -3,14 +3,6 @@ import { executeNonQuery } from '@/lib/database'
 
 export async function DELETE() {
   try {
-    // Only allow in development mode
-    if (process.env.NODE_ENV === 'production') {
-      return NextResponse.json(
-        { error: 'Admin functions are disabled in production' },
-        { status: 403 }
-      )
-    }
-
     // Get count before deletion
     const countQuery = 'SELECT COUNT(*) as total FROM ActivityLog'
     const countResult = await executeNonQuery(countQuery)

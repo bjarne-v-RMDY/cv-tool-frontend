@@ -5,10 +5,10 @@
 
 set -e
 
-# Configuration
-RESOURCE_GROUP="cvtool-rg"
-LOCATION="westeurope"
-CONTAINER_REGISTRY="cvtoolregistry"
+# Configuration (matches your existing Azure resources)
+RESOURCE_GROUP="az-rg-rmdy-cv-agent"
+LOCATION="francecentral"
+CONTAINER_REGISTRY="crrmdycvagent"
 IMAGE_NAME="cvtool-slackbot"
 IMAGE_TAG="latest"
 CONTAINER_APP_NAME="cvtool-slackbot"
@@ -33,9 +33,9 @@ az acr create \
   --admin-enabled true \
   --output none || true
 
-# Build and push Docker image
-echo "🏗️  Building Docker image..."
-docker build -t ${IMAGE_NAME}:${IMAGE_TAG} .
+# Build and push Docker image for linux/amd64 (Azure Container Apps requirement)
+echo "🏗️  Building Docker image for linux/amd64..."
+docker build --platform linux/amd64 -t ${IMAGE_NAME}:${IMAGE_TAG} .
 
 echo "🔑 Logging into Azure Container Registry..."
 az acr login --name $CONTAINER_REGISTRY

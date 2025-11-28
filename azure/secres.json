@@ -1,0 +1,19 @@
+{
+    "IsEncrypted": false,
+    "Values": {
+      "AzureWebJobsStorage": "DefaultEndpointsProtocol=https;AccountName=cvtoolstorage;AccountKey=6wY5XB71n5tYvax7jrxLRjqVuUCEObGx46zHmoUq4l4xcoMrZk6bjm2oQ4NxA3DcViBSpIMPbAZB+AStH2MtPA==;EndpointSuffix=core.windows.net",
+      "FUNCTIONS_WORKER_RUNTIME": "node",
+      "azure_sql_server": "cvtool-sql-server.database.windows.net",
+      "azure_sql_database": "cvtool-db",
+      "azure_sql_user": "cvtooladmin",
+      "azure_sql_password": "Sql_Server_Rmdy_Admin_eHsZFUCqABxN",
+      "azure_storage_connection_string": "DefaultEndpointsProtocol=https;AccountName=cvtoolstorage;AccountKey=6wY5XB71n5tYvax7jrxLRjqVuUCEObGx46zHmoUq4l4xcoMrZk6bjm2oQ4NxA3DcViBSpIMPbAZB+AStH2MtPA==;EndpointSuffix=core.windows.net",
+      "next_public_base_url": "https://cvtool-app.whitedune-f582cade.francecentral.azurecontainerapps.io",
+      "azure_openai_key": "9gkcj1dA4i57Sqkqschi9GTj0Jx9otgvXKkDAuLM49Kjo4ilX7fBJQQJ99BJAC5T7U2XJ3w3AAABACOGKkEl",
+      "azure_openai_resource": "https://cv-tool-openai.openai.azure.com/openai/deployments/gpt-4o/chat/completions?api-version=2025-01-01-preview",
+      "azure_openai_deployment": "gpt-4o",
+      "azure_search_endpoint": "https://cvtool-search.search.windows.net",
+      "azure_search_key": "8MjXKIWCRU1sRBrBGBVz82CKIowXc8pH5uOy4Mi4fKAzSeCmULY7",
+      "azure_openai_embedding_deployment": "text-embedding-ada-002"
+    }
+}

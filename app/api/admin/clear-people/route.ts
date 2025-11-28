@@ -52,14 +52,6 @@ async function clearSearchIndex() {
 }
 
 export async function DELETE() {
-  // Only allow in development
-  if (process.env.NODE_ENV !== 'development') {
-    return NextResponse.json(
-      { error: 'This endpoint is only available in development mode' },
-      { status: 403 }
-    );
-  }
-
   try {
     let deletedIndexDocuments = 0;
 

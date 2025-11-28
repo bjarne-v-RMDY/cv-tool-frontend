@@ -76,7 +76,7 @@ const data: { navMain: NavGroup[] } = {
         },
       ],
     },
-    ...(process.env.NODE_ENV === 'development' ? [{
+    {
       title: "Admin",
       url: "#",
       items: [
@@ -86,7 +86,7 @@ const data: { navMain: NavGroup[] } = {
           icon: Settings,
         },
       ],
-    }] : []),
+    },
   ],
 }
 

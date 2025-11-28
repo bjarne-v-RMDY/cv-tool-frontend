@@ -63,14 +63,6 @@ async function clearSearchIndex() {
 
 export async function DELETE() {
   try {
-    // Only allow in development mode
-    if (process.env.NODE_ENV === 'production') {
-      return NextResponse.json(
-        { error: 'Admin functions are disabled in production' },
-        { status: 403 }
-      )
-    }
-
     const CONTAINER_NAME = 'cv-files'
     let deletedFiles = 0
     let deletedRecords = 0
