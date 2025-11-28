@@ -1,6 +1,8 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
 using Microsoft.Data.SqlClient;
+using System.Data;
+using System.Text;
 using System.Text.Json;
 using CVToolFunctions.Models;
 using CVToolFunctions.Services;
@@ -49,10 +51,26 @@ public class VacancyProcessingFunction
                 "processing",
                 new { queueMessage, timestamp = DateTime.UtcNow });
 
-            // Parse queue message
-            var item = JsonSerializer.Deserialize<VacancyQueueMessage>(queueMessage);
+            // Parse queue message - handle base64 encoding if needed
+            string jsonMessage = queueMessage;
+            try
+            {
+                if (!queueMessage.TrimStart().StartsWith("{"))
+                {
+                    var bytes = Convert.FromBase64String(queueMessage);
+                    jsonMessage = Encoding.UTF8.GetString(bytes);
+                }
+            }
+            catch
+            {
+                jsonMessage = queueMessage;
+            }
+
+            var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+            var item = JsonSerializer.Deserialize<VacancyQueueMessage>(jsonMessage, options);
             if (item == null || string.IsNullOrEmpty(item.UniqueFileName))
             {
+                _logger.LogError($"Invalid queue message format. Message: {jsonMessage}");
                 throw new Exception("Invalid queue message format");
             }
 
@@ -137,7 +155,15 @@ Vacancy Document:
             command.Parameters.AddWithValue("@Duration", (object?)vacancy.Duration ?? DBNull.Value);
             command.Parameters.AddWithValue("@Location", (object?)vacancy.Location ?? DBNull.Value);
             command.Parameters.AddWithValue("@RemoteWork", vacancy.RemoteWork);
-            command.Parameters.AddWithValue("@StartDate", string.IsNullOrEmpty(vacancy.StartDate) ? DBNull.Value : vacancy.StartDate);
+            
+            // Parse date safely - handle various formats and invalid dates
+            var parsedStartDate = DateParser.ParseDate(vacancy.StartDate);
+            var startDateParam = new SqlParameter("@StartDate", SqlDbType.Date)
+            {
+                Value = DateParser.ToSqlValue(parsedStartDate)
+            };
+            command.Parameters.Add(startDateParam);
+            
             command.Parameters.AddWithValue("@Budget", (object?)vacancy.Budget ?? DBNull.Value);
 
             assignmentId = (int)(await command.ExecuteScalarAsync())!;
