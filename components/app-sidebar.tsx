@@ -18,13 +18,11 @@ import {
   FileText,
   Users,
   MessageCircle,
-  Settings,
   Briefcase,
   Building2,
   type LucideIcon
 } from "lucide-react"
 import { usePathname } from "next/navigation"
-import router from "next/router"
 
 // Navigation data with icons
 interface NavItem {
