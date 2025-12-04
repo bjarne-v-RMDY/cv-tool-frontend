@@ -1,6 +1,8 @@
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Data;
+using CVToolFunctions.Utils;
 
 namespace CVToolFunctions.Services;
 
@@ -195,8 +197,22 @@ public class DatabaseService
             command.Parameters.AddWithValue("@Company", company);
             command.Parameters.AddWithValue("@Role", (object?)role ?? DBNull.Value);
             command.Parameters.AddWithValue("@Description", (object?)description ?? DBNull.Value);
-            command.Parameters.AddWithValue("@StartDate", string.IsNullOrEmpty(startDate) ? DBNull.Value : startDate);
-            command.Parameters.AddWithValue("@EndDate", string.IsNullOrEmpty(endDate) ? DBNull.Value : endDate);
+            
+            // Parse dates safely - handle various formats and invalid dates
+            var parsedStartDate = DateParser.ParseDate(startDate);
+            var parsedEndDate = DateParser.ParseDate(endDate);
+            
+            var startDateParam = new SqlParameter("@StartDate", SqlDbType.Date)
+            {
+                Value = DateParser.ToSqlValue(parsedStartDate)
+            };
+            var endDateParam = new SqlParameter("@EndDate", SqlDbType.Date)
+            {
+                Value = DateParser.ToSqlValue(parsedEndDate)
+            };
+            
+            command.Parameters.Add(startDateParam);
+            command.Parameters.Add(endDateParam);
             command.Parameters.AddWithValue("@IsCurrentJob", isCurrentJob);
 
             var result = await command.ExecuteScalarAsync();

@@ -1,5 +1,6 @@
 using Microsoft.Azure.Functions.Worker;
 using Microsoft.Extensions.Logging;
+using System.Text;
 using System.Text.Json;
 using CVToolFunctions.Models;
 using CVToolFunctions.Services;
@@ -48,10 +49,33 @@ public class CVProcessingFunction
                 "processing",
                 new { queueMessage, timestamp = DateTime.UtcNow });
 
-            // Parse queue message
-            var item = JsonSerializer.Deserialize<CVQueueMessage>(queueMessage);
+            // Parse queue message - handle base64 encoding if needed
+            string jsonMessage = queueMessage;
+            try
+            {
+                // Try to decode as base64 first (Azure Storage Queues send base64-encoded messages)
+                if (!queueMessage.TrimStart().StartsWith("{"))
+                {
+                    var bytes = Convert.FromBase64String(queueMessage);
+                    jsonMessage = Encoding.UTF8.GetString(bytes);
+                    _logger.LogInformation("Decoded base64 queue message");
+                }
+            }
+            catch
+            {
+                // Not base64, use as-is
+                jsonMessage = queueMessage;
+            }
+
+            // Parse JSON (case-insensitive)
+            var options = new JsonSerializerOptions
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            var item = JsonSerializer.Deserialize<CVQueueMessage>(jsonMessage, options);
             if (item == null || string.IsNullOrEmpty(item.UniqueFileName))
             {
+                _logger.LogError($"Invalid queue message format. Message: {jsonMessage}");
                 throw new Exception("Invalid queue message format");
             }
 

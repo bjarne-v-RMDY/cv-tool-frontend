@@ -2,8 +2,8 @@
 
 # CV Tool Azure Functions - Deployment Script
 
-FUNCTION_APP_NAME="cv-tool-functions"
-RESOURCE_GROUP="cv-tool-rg"
+FUNCTION_APP_NAME="cvtool-functions"
+RESOURCE_GROUP="az-rg-rmdy-cv-agent"
 
 echo "🚀 Deploying CV Tool Azure Functions to Azure"
 echo "================================================"
@@ -53,11 +53,54 @@ fi
 echo "✅ Build successful"
 echo ""
 
-# Deploy to Azure
+# Ensure FUNCTIONS_WORKER_RUNTIME is set correctly in Azure
+echo "⚙️  Ensuring FUNCTIONS_WORKER_RUNTIME is set to dotnet-isolated..."
+az functionapp config appsettings set \
+  --name $FUNCTION_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --settings FUNCTIONS_WORKER_RUNTIME=dotnet-isolated \
+  --output none 2>/dev/null || true
+
+echo "✅ Runtime configuration verified"
+echo ""
+
+# Ensure FUNCTIONS_WORKER_RUNTIME is set correctly in Azure
+echo "⚙️  Ensuring FUNCTIONS_WORKER_RUNTIME is set to dotnet-isolated..."
+az functionapp config appsettings set \
+  --name $FUNCTION_APP_NAME \
+  --resource-group $RESOURCE_GROUP \
+  --settings FUNCTIONS_WORKER_RUNTIME=dotnet-isolated \
+  --output none
+
+echo "✅ Runtime configuration verified"
+echo ""
+
+# Deploy to Azure using ZIP deploy (bypasses runtime detection issues)
 echo "📤 Deploying to Azure Function App: $FUNCTION_APP_NAME..."
 echo ""
 
-func azure functionapp publish $FUNCTION_APP_NAME --csharp
+# Build and publish
+echo "📦 Building and publishing project..."
+dotnet publish --configuration Release --output ./publish
+
+# Create ZIP file
+echo "📦 Creating deployment package..."
+cd publish
+zip -r ../deploy.zip . -q
+cd ..
+
+# Deploy using ZIP deploy
+echo "🚀 Deploying package to Azure..."
+az functionapp deployment source config-zip \
+  --resource-group $RESOURCE_GROUP \
+  --name $FUNCTION_APP_NAME \
+  --src ./deploy.zip
+
+# Cleanup
+rm -f deploy.zip
+rm -rf publish
+
+echo ""
 
 if [ $? -ne 0 ]; then
     echo ""

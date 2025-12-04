@@ -18,7 +18,6 @@ import {
   FileText,
   Users,
   MessageCircle,
-  Settings,
   Briefcase,
   Building2,
   type LucideIcon
@@ -76,17 +75,6 @@ const data: { navMain: NavGroup[] } = {
         },
       ],
     },
-    {
-      title: "Admin",
-      url: "#",
-      items: [
-        {
-          title: "Admin Panel",
-          url: "/dashboard/admin",
-          icon: Settings,
-        },
-      ],
-    },
   ],
 }
 
@@ -104,7 +92,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar {...props} variant="inset">
       <SidebarHeader>
-        <div className="flex items-center gap-3 px-2 py-4">
+        <div className="flex items-center gap-3 px-2 py-4" >
           <div className="bg-primary text-primary-foreground flex aspect-square size-10 items-center justify-center rounded-lg shadow-sm">
             <span className="text-xs font-bold tracking-tight">RMDY</span>
           </div>
